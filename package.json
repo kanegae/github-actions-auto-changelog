@@ -1,20 +1,26 @@
 {
   "name": "github-actions-auto-changelog",
   "version": "1.0.0",
-  "description": "Prova de conceito para validar o uso de GitHub Actions na geração automática de changelog.",
+  "description": "Automated changelog generation using GitHub Actions and Git history (Gitflow-ready).",
   "main": "scripts/generate-changelog.js",
+  "type": "commonjs",
   "scripts": {
     "changelog": "node scripts/generate-changelog.js",
-    "test": "node scripts/test-changelog.js"
+    "test": "node scripts/test-changelog.js",
+    "test:full": "npm run changelog && npm run test",
+    "lint:changelog": "node scripts/generate-changelog.js --dry-run || true"
   },
   "keywords": [
     "github-actions",
     "changelog",
     "automation",
     "git",
-    "releases"
+    "releases",
+    "gitflow",
+    "ci",
+    "cd"
   ],
-  "author": "",
+  "author": "Kanegae",
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0"

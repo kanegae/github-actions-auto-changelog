@@ -5,17 +5,38 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 /**
- * Script para gerar changelog automaticamente baseado no histórico Git
- * Lê os commits entre tags e gera entrada no CHANGELOG.md
+ * Gera CHANGELOG.md automaticamente a partir do histórico Git.
+ * - Primeira tag: histórico completo até a tag
+ * - Demais tags: commits entre tags
  */
 
-function getGitLog(fromTag, toTag = 'HEAD') {
+function run(cmd) {
+  return execSync(cmd, { encoding: 'utf-8' }).trim();
+}
+
+function getTags() {
   try {
-    const command = `git log ${fromTag}..${toTag} --pretty=format:"%h|%s|%an|%ae|%ad" --date=short`;
-    const output = execSync(command, { encoding: 'utf-8' });
-    return output.trim().split('\n').filter(line => line.length > 0);
-  } catch (error) {
-    console.error('Erro ao buscar histórico Git:', error.message);
+    const output = run('git tag --sort=-creatordate');
+    return output.split('\n').filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function getCommitsUntilTag(tag) {
+  try {
+    const cmd = `git log ${tag} --pretty=format:"%h|%s|%an|%ae|%ad" --date=short`;
+    return run(cmd).split('\n').filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function getCommitsBetweenTags(fromTag, toTag) {
+  try {
+    const cmd = `git log ${fromTag}..${toTag} --pretty=format:"%h|%s|%an|%ae|%ad" --date=short`;
+    return run(cmd).split('\n').filter(Boolean);
+  } catch {
     return [];
   }
 }
@@ -26,64 +47,54 @@ function parseCommit(line) {
 }
 
 function categorizeCommit(subject) {
-  const feat = subject.toLowerCase().match(/^feat(\(.+\))?:/);
-  const fix = subject.toLowerCase().match(/^fix(\(.+\))?:/);
-  const docs = subject.toLowerCase().match(/^docs(\(.+\))?:/);
-  const style = subject.toLowerCase().match(/^style(\(.+\))?:/);
-  const refactor = subject.toLowerCase().match(/^refactor(\(.+\))?:/);
-  const perf = subject.toLowerCase().match(/^perf(\(.+\))?:/);
-  const test = subject.toLowerCase().match(/^test(\(.+\))?:/);
-  const chore = subject.toLowerCase().match(/^chore(\(.+\))?:/);
-
-  if (feat) return 'Features';
-  if (fix) return 'Bug Fixes';
-  if (docs) return 'Documentation';
-  if (style) return 'Styles';
-  if (refactor) return 'Refactoring';
-  if (perf) return 'Performance';
-  if (test) return 'Tests';
-  if (chore) return 'Chores';
+  const s = subject.toLowerCase();
+  if (/^feat(\(.+\))?:/.test(s)) return 'Features';
+  if (/^fix(\(.+\))?:/.test(s)) return 'Bug Fixes';
+  if (/^docs(\(.+\))?:/.test(s)) return 'Documentation';
+  if (/^perf(\(.+\))?:/.test(s)) return 'Performance';
+  if (/^refactor(\(.+\))?:/.test(s)) return 'Refactoring';
+  if (/^style(\(.+\))?:/.test(s)) return 'Styles';
+  if (/^test(\(.+\))?:/.test(s)) return 'Tests';
+  if (/^chore(\(.+\))?:/.test(s)) return 'Chores';
   return 'Other';
-}
-
-function getTags() {
-  try {
-    const output = execSync('git tag --sort=-creatordate', { encoding: 'utf-8' });
-    return output.trim().split('\n').filter(tag => tag.length > 0);
-  } catch (error) {
-    console.error('Erro ao buscar tags:', error.message);
-    return [];
-  }
 }
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString('pt-BR');
 }
 
-function generateChangelogEntry(version, changes, date) {
+function generateEntry(version, commits) {
+  if (!commits.length) return '';
+
+  const date = commits[0].date;
   let entry = `## [${version}] - ${formatDate(date)}\n\n`;
 
-  // Agrupar changes por categoria
   const categories = {};
-  changes.forEach(commit => {
+
+  commits.forEach(commit => {
     const category = categorizeCommit(commit.subject);
-    if (!categories[category]) {
-      categories[category] = [];
-    }
+    categories[category] ??= [];
     categories[category].push(commit);
   });
 
-  // Ordenar categorias
-  const order = ['Features', 'Bug Fixes', 'Documentation', 'Performance', 'Refactoring', 'Styles', 'Tests', 'Chores', 'Other'];
-  const sortedCategories = Object.keys(categories).sort((a, b) => {
-    return order.indexOf(a) - order.indexOf(b);
-  });
+  const order = [
+    'Features',
+    'Bug Fixes',
+    'Documentation',
+    'Performance',
+    'Refactoring',
+    'Styles',
+    'Tests',
+    'Chores',
+    'Other'
+  ];
 
-  // Gerar markdown para cada categoria
-  sortedCategories.forEach(category => {
+  order.forEach(category => {
+    if (!categories[category]) return;
+
     entry += `### ${category}\n\n`;
-    categories[category].forEach(commit => {
-      entry += `- ${commit.subject} (${commit.hash.substring(0, 7)}) - ${commit.author}\n`;
+    categories[category].forEach(c => {
+      entry += `- ${c.subject} (${c.hash}) - ${c.author}\n`;
     });
     entry += '\n';
   });
@@ -95,45 +106,40 @@ function generateChangelog() {
   const changelogPath = path.join(process.cwd(), 'CHANGELOG.md');
   const tags = getTags();
 
-  if (tags.length === 0) {
-    console.log('Nenhuma tag encontrada. Criando changelog inicial...');
-    const initialContent = `# Changelog\n\nTodas as mudanças notáveis neste projeto serão documentadas neste arquivo.\n\n`;
-    fs.writeFileSync(changelogPath, initialContent);
+  let content = `# Changelog
+
+Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
+
+`;
+
+  if (!tags.length) {
+    fs.writeFileSync(changelogPath, content);
+    console.log('Nenhuma tag encontrada. Changelog base criado.');
     return;
   }
 
-  let changelogContent = '# Changelog\n\nTodas as mudanças notáveis neste projeto serão documentadas neste arquivo.\n\n';
-  changelogContent += 'O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).\n\n';
-
-  // Processar cada tag
   for (let i = 0; i < tags.length; i++) {
-    const currentTag = tags[i];
-    const previousTag = i + 1 < tags.length ? tags[i + 1] : null;
+    const current = tags[i];
+    const previous = tags[i + 1];
 
-    console.log(`Processando tag: ${currentTag}${previousTag ? ` (desde ${previousTag})` : ' (primeira release)'}`);
+    console.log(
+      `Processando ${current}` +
+      (previous ? ` (desde ${previous})` : ' (primeira release)')
+    );
 
-    let commits = [];
-    if (previousTag) {
-      const log = getGitLog(previousTag, currentTag);
-      commits = log.map(parseCommit);
-    } else {
-      const log = getGitLog(currentTag);
-      commits = log.map(parseCommit);
-    }
+    const rawCommits = previous
+      ? getCommitsBetweenTags(previous, current)
+      : getCommitsUntilTag(current);
 
-    if (commits.length > 0) {
-      const entry = generateChangelogEntry(
-        currentTag.replace(/^v/, ''),
-        commits,
-        commits[0].date
-      );
-      changelogContent += entry;
-    }
+    const commits = rawCommits.map(parseCommit);
+    const entry = generateEntry(current.replace(/^v/, ''), commits);
+
+    content += entry;
   }
 
-  fs.writeFileSync(changelogPath, changelogContent);
-  console.log(`✓ Changelog gerado com sucesso em ${changelogPath}`);
+  fs.writeFileSync(changelogPath, content);
+  console.log(`✓ CHANGELOG.md gerado com sucesso`);
 }
 
-// Executar
 generateChangelog();

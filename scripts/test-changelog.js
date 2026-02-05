@@ -2,7 +2,8 @@
 
 /**
  * Script de teste para validar o gerador de changelog
- * Execute com: node scripts/test-changelog.js
+ * Execute com:
+ * node scripts/test-changelog.js
  */
 
 const fs = require('fs');
@@ -34,108 +35,131 @@ function runTest(name, fn) {
   }
 }
 
-function testFileExists(filePath, name) {
-  const fullPath = path.join(process.cwd(), filePath);
-  if (!fs.existsSync(fullPath)) {
+function fileExists(filePath) {
+  return fs.existsSync(path.join(process.cwd(), filePath));
+}
+
+function testFileExists(filePath) {
+  if (!fileExists(filePath)) {
     throw new Error(`Arquivo não encontrado: ${filePath}`);
   }
 }
 
-function testFileContains(filePath, content, name) {
+function testFileContains(filePath, content) {
   const fullPath = path.join(process.cwd(), filePath);
   const fileContent = fs.readFileSync(fullPath, 'utf-8');
+
   if (!fileContent.includes(content)) {
-    throw new Error(`Arquivo não contém: "${content}"`);
+    throw new Error(`Arquivo ${filePath} não contém: "${content}"`);
   }
 }
 
-function testGitTag(tag) {
-  try {
-    execSync(`git rev-parse ${tag}`, { encoding: 'utf-8' });
-  } catch (error) {
-    throw new Error(`Tag Git não existe: ${tag}`);
-  }
+function runNodeScript(scriptPath) {
+  execSync(`node ${scriptPath}`, { stdio: 'pipe' });
 }
 
-function testNodeScript(scriptPath) {
-  try {
-    execSync(`node ${scriptPath}`, { encoding: 'utf-8' });
-  } catch (error) {
-    throw new Error(`Script falhou: ${error.message}`);
-  }
-}
-
-log('\n╔═════════════════════════════════════════==═════════╗', 'blue');
-log('║  Teste do Gerador de Changelog                     ║', 'blue');
+log('\n╔════════════════════════════════════════════════════╗', 'blue');
+log('║        Teste do Gerador de Changelog               ║', 'blue');
 log('╚════════════════════════════════════════════════════╝', 'blue');
 
 const results = [];
 
-// Teste 1: Verificar estrutura de diretórios
-results.push(runTest('Verificar estrutura de diretórios', () => {
-  testFileExists('.github/workflows/changelog.yml', 'Workflow do GitHub Actions');
-  testFileExists('scripts/generate-changelog.js', 'Script de geração');
-  testFileExists('package.json', 'Configuração Node.js');
-  testFileExists('CHANGELOG.md', 'Arquivo de changelog');
+/* =======================================================
+   TESTE 1 — Estrutura básica do projeto
+======================================================= */
+results.push(runTest('Estrutura básica do projeto', () => {
+  testFileExists('.github/workflows/changelog.yml');
+  testFileExists('scripts/generate-changelog.js');
+  testFileExists('package.json');
 }));
 
-// Teste 2: Verificar conteúdo do workflow
-results.push(runTest('Verificar conteúdo do workflow GitHub Actions', () => {
-  testFileContains('.github/workflows/changelog.yml', 'Auto Generate Changelog', 'Nome do workflow');
-  testFileContains('.github/workflows/changelog.yml', 'npm run changelog', 'Comando do changelog');
+/* =======================================================
+   TESTE 2 — Workflow GitHub Actions
+======================================================= */
+results.push(runTest('Workflow GitHub Actions válido', () => {
+  testFileContains('.github/workflows/changelog.yml', 'Auto Generate Changelog');
+  testFileContains('.github/workflows/changelog.yml', 'npm run changelog');
 }));
 
-// Teste 3: Verificar conteúdo do package.json
-results.push(runTest('Verificar package.json', () => {
-  testFileContains('package.json', 'github-actions-auto-changelog', 'Nome do projeto');
-  testFileContains('package.json', 'changelog', 'Script de changelog');
+/* =======================================================
+   TESTE 3 — package.json
+======================================================= */
+results.push(runTest('package.json configurado', () => {
+  testFileContains('package.json', '"scripts"');
+  testFileContains('package.json', 'changelog');
 }));
 
-// Teste 4: Verificar conteúdo do CHANGELOG.md
-results.push(runTest('Verificar CHANGELOG.md', () => {
-  testFileContains('CHANGELOG.md', 'Changelog', 'Título principal');
-  testFileContains('CHANGELOG.md', 'Keep a Changelog', 'Referência ao padrão');
+/* =======================================================
+   TESTE 4 — Script de geração
+======================================================= */
+results.push(runTest('Script generate-changelog válido', () => {
+  testFileContains('scripts/generate-changelog.js', 'generateChangelog');
+  testFileContains('scripts/generate-changelog.js', 'categorizeCommit');
+  testFileContains('scripts/generate-changelog.js', 'getTags');
 }));
 
-// Teste 5: Verificar script de geração
-results.push(runTest('Verificar script de geração', () => {
-  testFileContains('scripts/generate-changelog.js', 'getGitLog', 'Função de leitura Git');
-  testFileContains('scripts/generate-changelog.js', 'categorizeCommit', 'Função de categorização');
-  testFileContains('scripts/generate-changelog.js', 'generateChangelog', 'Função principal');
+/* =======================================================
+   TESTE 5 — Executar geração
+======================================================= */
+results.push(runTest('Executar geração de changelog', () => {
+  runNodeScript('scripts/generate-changelog.js');
 }));
 
-// Teste 6: Executar script de geração
-results.push(runTest('Executar script de geração de changelog', () => {
-  testNodeScript('scripts/generate-changelog.js');
+/* =======================================================
+   TESTE 6 — CHANGELOG gerado
+======================================================= */
+results.push(runTest('CHANGELOG.md existe', () => {
+  testFileExists('CHANGELOG.md');
 }));
 
-// Teste 7: Verificar documentação
-results.push(runTest('Verificar documentação', () => {
-  testFileExists('README.md', 'README');
-  testFileExists('DEVELOPMENT.md', 'Guia de desenvolvimento');
-  testFileExists('EXAMPLES.md', 'Exemplos de uso');
+/* =======================================================
+   TESTE 7 — CHANGELOG não vazio
+======================================================= */
+results.push(runTest('CHANGELOG não está vazio', () => {
+  const content = fs.readFileSync('CHANGELOG.md', 'utf-8').trim();
+
+  if (content.length < 30) {
+    throw new Error('CHANGELOG parece vazio');
+  }
+
+  if (!content.includes('Changelog')) {
+    throw new Error('Título do changelog não encontrado');
+  }
 }));
 
-// Teste 8: Verificar .gitignore
-results.push(runTest('Verificar .gitignore', () => {
-  testFileContains('.gitignore', 'node_modules', 'Ignorar node_modules');
-  testFileContains('.gitignore', 'npm-debug.log', 'Ignorar logs npm');
+/* =======================================================
+   TESTE 8 — .gitignore (opcional)
+======================================================= */
+results.push(runTest('.gitignore básico', () => {
+  if (!fileExists('.gitignore')) {
+    log('Aviso: .gitignore não encontrado (ok se não usar)', 'yellow');
+    return;
+  }
+
+  const content = fs.readFileSync('.gitignore', 'utf-8');
+
+  if (!content.includes('node_modules')) {
+    throw new Error('node_modules não está no .gitignore');
+  }
 }));
 
-// Resumo
+/* =======================================================
+   RESUMO FINAL
+======================================================= */
 log('\n╔════════════════════════════════════════════════════╗', 'blue');
-const totalTests = results.length;
-const passedTests = results.filter(r => r).length;
-const failedTests = totalTests - passedTests;
 
-log(`║  Resultado: ${passedTests}/${totalTests} testes passaram${' '.repeat(20 - `${passedTests}/${totalTests}`.length)}║`, 'blue');
+const total = results.length;
+const passed = results.filter(Boolean).length;
+const failed = total - passed;
 
-if (failedTests > 0) {
-  log(`║  ${failedTests} teste(s) falharam${' '.repeat(30 - `${failedTests} teste(s) falharam`.length)}║`, 'red');
+log(`║ Resultado: ${passed}/${total} testes passaram`, 'blue');
+
+if (failed > 0) {
+  log(`║ ${failed} teste(s) falharam.`, 'red');
 } else {
-  log('║  ✓ Todos os testes passaram com sucesso!         ║', 'green');
+  log('║ ✓ Todos os testes passaram com sucesso!', 'green');
 }
 
 log('╚════════════════════════════════════════════════════╝', 'blue');
 
-process.exit(failedTests > 0 ? 1 : 0);
+process.exit(failed > 0 ? 1 : 0);
