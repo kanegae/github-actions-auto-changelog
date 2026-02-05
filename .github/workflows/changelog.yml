@@ -3,10 +3,7 @@ name: Auto Generate Changelog
 on:
   push:
     tags:
-      - 'v*'
-  release:
-    types:
-      - published
+      - "v*"
 
 permissions:
   contents: write
@@ -15,31 +12,62 @@ permissions:
 jobs:
   changelog:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      # checkout completo com histórico
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
 
+      # deps
       - name: Install dependencies
         run: npm install
 
+      # gerar changelog
       - name: Generate changelog
         run: npm run changelog
 
-      - name: Commit and push changes
+      # descobrir branch da tag
+      - name: Detect branch of tag
+        id: branch
         run: |
+          echo "Detectando branch da tag..."
+          BRANCH=$(git branch -r --contains ${{ github.sha }} | grep -v '\->' | head -n 1 | sed 's/origin\///')
+          
+          if [ -z "$BRANCH" ]; then
+            echo "Não foi possível detectar branch. Usando development como fallback."
+            BRANCH=development
+          fi
+
+          echo "Branch detectada: $BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      # commit e push na branch correta
+      - name: Commit and push changelog
+        run: |
+          TARGET=${{ steps.branch.outputs.branch }}
+
+          echo "Mudando para branch: $TARGET"
+          git checkout $TARGET
+          git pull origin $TARGET
+
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
-          git checkout main
-          
+
           git add CHANGELOG.md
-          git commit -m "docs: update changelog for ${{ github.ref }}" || echo "No changes"
-          git push origin main
-        if: github.ref_type == 'tag'
+
+          git commit -m "docs: update changelog for ${{ github.ref }}" || echo "Sem mudanças no changelog"
+          git push origin $TARGET
+
+      # atualizar release automaticamente
+      - name: Update GitHub Release with changelog
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: CHANGELOG.md
