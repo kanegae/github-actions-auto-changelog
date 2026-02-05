@@ -14,60 +14,59 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # checkout completo com histórico
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
 
-      # deps
       - name: Install dependencies
         run: npm install
 
-      # gerar changelog
       - name: Generate changelog
         run: npm run changelog
 
-      # descobrir branch da tag
+      # 🔍 detectar branch da tag
       - name: Detect branch of tag
-        id: branch
+        id: detect_branch
         run: |
           echo "Detectando branch da tag..."
-          BRANCH=$(git branch -r --contains ${{ github.sha }} | grep -v '\->' | head -n 1 | sed 's/origin\///')
-          
+
+          BRANCH=$(git branch -r --contains "${GITHUB_SHA}" \
+            | grep -v '->' \
+            | sed 's|origin/||' \
+            | head -n 1 \
+            | tr -d '[:space:]')
+
           if [ -z "$BRANCH" ]; then
-            echo "Não foi possível detectar branch. Usando development como fallback."
-            BRANCH=development
+            BRANCH="development"
+            echo "Fallback para development"
           fi
 
           echo "Branch detectada: $BRANCH"
-          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "TARGET_BRANCH=$BRANCH" >> $GITHUB_ENV
 
-      # commit e push na branch correta
+      # 🧾 commit e push
       - name: Commit and push changelog
         run: |
-          TARGET=${{ steps.branch.outputs.branch }}
+          echo "Usando branch: $TARGET_BRANCH"
 
-          echo "Mudando para branch: $TARGET"
-          git checkout $TARGET
-          git pull origin $TARGET
+          git checkout "$TARGET_BRANCH"
+          git pull origin "$TARGET_BRANCH"
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
           git add CHANGELOG.md
+          git commit -m "docs: update changelog for ${{ github.ref }}" || echo "Sem mudanças"
+          git push origin "$TARGET_BRANCH"
 
-          git commit -m "docs: update changelog for ${{ github.ref }}" || echo "Sem mudanças no changelog"
-          git push origin $TARGET
-
-      # atualizar release automaticamente
-      - name: Update GitHub Release with changelog
+      # 🚀 atualizar release
+      - name: Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           body_path: CHANGELOG.md
