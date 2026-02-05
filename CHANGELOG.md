@@ -3,6 +3,13 @@
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
+## [1.1] - 05/02/2026
+
+### Documentation
+
+- docs: Melhorias no README (ed62659) - Anderson Kanegae Soares Rocha
+- docs: update changelog for refs/tags/v1.0 (8dbf5aa) - GitHub Action
+
 ## [1.0] - 05/02/2026
 
 ### Features
