@@ -95,12 +95,12 @@ npm run changelog
 
 ## Características
 
-✅ Automação completa via GitHub Actions
-✅ Segue padrões de Conventional Commits
-✅ Categoriza commits automaticamente
-✅ Suporta múltiplas versões (tags)
-✅ Execução local e remota
-✅ Sem dependências externas complexas
+- ✅ Automação completa via GitHub Actions 
+- ✅ Segue padrões de Conventional Commits 
+- ✅ Categoriza commits automaticamente 
+- ✅ Suporta múltiplas versões (tags)
+- ✅ Execução local e remota
+- ✅ Sem dependências externas complexas
 
 ## Próximas Melhorias
 
