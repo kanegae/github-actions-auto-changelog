@@ -115,7 +115,7 @@ O workflow em `.github/workflows/changelog.yml` faz:
 ## Contribuindo
 
 1. Fork o repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/sua-feature`)
+2. Crie uma branch para a sua feature (`git checkout -b feature/sua-feature`)
 3. Faça commits usando Conventional Commits
 4. Push para a branch (`git push origin feature/sua-feature`)
 5. Abra um Pull Request
