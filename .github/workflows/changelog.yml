@@ -36,7 +36,10 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          
+          git checkout main
+          
           git add CHANGELOG.md
-          git commit -m "docs: update changelog for ${{ github.ref }}"
-          git push
+          git commit -m "docs: update changelog for ${{ github.ref }}" || echo "No changes"
+          git push origin main
         if: github.ref_type == 'tag'
