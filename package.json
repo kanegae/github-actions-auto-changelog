@@ -1,0 +1,21 @@
+{
+  "name": "github-actions-auto-changelog",
+  "version": "1.0.0",
+  "description": "Prova de conceito para validar o uso de GitHub Actions na geração automática de changelog.",
+  "main": "scripts/generate-changelog.js",
+  "scripts": {
+    "changelog": "node scripts/generate-changelog.js"
+  },
+  "keywords": [
+    "github-actions",
+    "changelog",
+    "automation",
+    "git",
+    "releases"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

@@ -31,6 +31,15 @@ buildNumber.properties
 ### VS Code ###
 .vscode/
 
+### Node.js ###
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm
+*.tgz
+package-lock.json
+yarn.lock
+
 ### OS ###
 .DS_Store
 Thumbs.db
