@@ -4,7 +4,8 @@
   "description": "Prova de conceito para validar o uso de GitHub Actions na geração automática de changelog.",
   "main": "scripts/generate-changelog.js",
   "scripts": {
-    "changelog": "node scripts/generate-changelog.js"
+    "changelog": "node scripts/generate-changelog.js",
+    "test": "node scripts/test-changelog.js"
   },
   "keywords": [
     "github-actions",
