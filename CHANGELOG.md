@@ -3,6 +3,13 @@
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
+## [1.2] - 06/02/2026
+
+### Documentation
+
+- docs: Reorganização do README (1ca2df9) - Anderson Kanegae Soares Rocha
+- docs: update changelog for refs/tags/v1.1 (00eb1f0) - GitHub Action
+
 ## [1.1] - 05/02/2026
 
 ### Documentation
