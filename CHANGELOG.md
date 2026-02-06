@@ -3,6 +3,28 @@
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
+## [Unreleased]
+### Added
+- feat: Github Action para atualizar sessão unreleased do changelog a cada PR aceito (ed12d7f) - Anderson Kanegae Soares Rocha
+
+### Fixed
+-
+
+### Changed
+- docs: Ajustes no README (d3cb079) - Anderson Kanegae Soares Rocha
+- docs: update changelog for refs/tags/v1.2 (ef2f9a0) - GitHub Action
+
+### Deprecated
+-
+
+### Removed
+-
+
+### Security
+-
+
+---
+
 ## [1.2] - 06/02/2026
 
 ### Documentation
@@ -42,4 +64,3 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 ### Other
 
 - Commit inicial (05e6921) - Anderson Kanegae Soares Rocha
-
