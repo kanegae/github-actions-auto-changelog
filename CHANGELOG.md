@@ -5,14 +5,13 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ## [Unreleased]
 ### Added
-- feat: Github Action para atualizar sessão unreleased do changelog a cada PR aceito (ed12d7f) - Anderson Kanegae Soares Rocha
+-
 
 ### Fixed
 -
 
 ### Changed
-- docs: Ajustes no README (d3cb079) - Anderson Kanegae Soares Rocha
-- docs: update changelog for refs/tags/v1.2 (ef2f9a0) - GitHub Action
+-
 
 ### Deprecated
 -
@@ -24,6 +23,14 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 -
 
 ---
+
+## [1.3] - 2026-02-06
+### Added
+- feat: Github Action para atualizar sessão unreleased do changelog a cada PR aceito (ed12d7f) - Anderson Kanegae Soares Rocha
+
+### Changed
+- docs: Ajustes no README (d3cb079) - Anderson Kanegae Soares Rocha
+- docs: update changelog for refs/tags/v1.2 (ef2f9a0) - GitHub Action
 
 ## [1.2] - 06/02/2026
 
