@@ -100,14 +100,6 @@ docs: atualizar instruções de instalação
 - ✅ Execução local e remota
 - ✅ Sem dependências externas complexas
 
-## Próximas melhorias
-
-- [ ] Suporte a templates customizáveis
-- [ ] Integração com GitHub Release Notes
-- [ ] Geração de resumo de mudanças
-- [ ] Notificações de changelog
-- [ ] Suporte a múltiplos idiomas
-
 ## Mais informações
 
 - [Conventional Commits](https://www.conventionalcommits.org/)
