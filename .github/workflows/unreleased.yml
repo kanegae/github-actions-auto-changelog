@@ -1,0 +1,47 @@
+name: Update Unreleased Changelog
+
+on:
+  push:
+    branches:
+      - "main"
+      - "master"
+      - "development"
+
+permissions:
+  contents: write
+
+jobs:
+  changelog_unreleased:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Update Unreleased section
+        run: npm run changelog:unreleased
+
+      - name: Commit and push changelog
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+
+          git checkout "$BRANCH"
+          git pull origin "$BRANCH"
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git add CHANGELOG.md
+          git commit -m "docs: update unreleased changelog" || echo "Sem mudanças"
+          git push origin "$BRANCH"

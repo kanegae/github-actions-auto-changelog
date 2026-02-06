@@ -4,26 +4,31 @@ Prova de conceito para validar o uso de GitHub Actions na geração automática 
 
 ## Objetivo
 
-Validar um workflow que gere o `CHANGELOG.md` a partir do histórico Git, acionado por tags ou releases.
+Validar um workflow que mantenha o `CHANGELOG.md` atualizado a partir do histórico Git, com uma
+sessão `Unreleased` em merges e promoção para versão em tags ou releases.
 
 ## Como funciona
 
 ### Componentes principais
 
-1. **Workflow do GitHub Actions** (`.github/workflows/changelog.yml`)
-   - Dispara quando uma tag `v*` é criada
-   - Pode ser usado em releases publicados
-   - Executa o script de geração
+1. **Workflow de Unreleased** (`.github/workflows/unreleased.yml`)
+   - Dispara em push nas branches principais
+   - Atualiza apenas a sessão `Unreleased`
    - Faz commit e push das mudanças automaticamente
 
-2. **Script de geração de changelog** (`scripts/generate-changelog.js`)
-   - Lê o histórico e as tags do Git
-   - Categoriza commits por tipo (Conventional Commits)
-   - Gera entradas formatadas em Markdown
+2. **Workflow de Release** (`.github/workflows/changelog.yml`)
+   - Dispara quando uma tag `v*` é criada
+   - Promove o conteúdo de `Unreleased` para uma versão com data
+   - Faz commit e push das mudanças automaticamente
 
-3. **CHANGELOG.md**
+3. **Scripts de changelog**
+   - `scripts/update-unreleased.js`: atualiza a sessão `Unreleased`
+   - `scripts/promote-release.js`: promove `Unreleased` para versão
+   - `scripts/generate-changelog.js`: gera o changelog completo (uso manual)
+
+4. **CHANGELOG.md**
    - Armazena o histórico de mudanças
-   - Atualizado automaticamente pelo workflow
+   - Mantém `Unreleased` no topo
    - Segue o padrão Keep a Changelog
 
 ## Requisitos
@@ -35,26 +40,38 @@ Validar um workflow que gere o `CHANGELOG.md` a partir do histórico Git, aciona
 
 ```bash
 npm install
+npm run changelog:unreleased
+```
+
+### Gerar release localmente (opcional)
+
+```bash
+npm run changelog:release -- --version 1.0.0 --date 2026-02-04
+```
+
+### Gerar changelog completo (opcional)
+
+```bash
 npm run changelog
 ```
 
 ## Uso via GitHub Actions
 
-1. Crie uma tag:
+1. Merge na branch principal atualiza `Unreleased` automaticamente.
+
+2. Crie uma tag para promover o release:
    ```bash
    git tag v1.0.0
    git push origin v1.0.0
    ```
 
-2. Ou publique um release no GitHub:
+3. Ou publique um release no GitHub:
    - Acesse a página de releases do repositório
    - Clique em "Create a new release"
    - Selecione ou crie uma tag
    - Publique o release
 
-3. O workflow será acionado e:
-   - Atualiza `CHANGELOG.md`
-   - Comita e faz push do changelog
+4. O workflow promove `Unreleased` para a nova versão e faz commit/push.
 
 ## Convenção de commits
 
@@ -82,9 +99,12 @@ docs: atualizar instruções de instalação
 .
 ├── .github/
 │   └── workflows/
-│       └── changelog.yml          # Workflow do GitHub Actions
+│       ├── changelog.yml          # Workflow de release
+│       └── unreleased.yml         # Workflow de Unreleased
 ├── scripts/
 │   ├── generate-changelog.js      # Script de geração de changelog
+│   ├── update-unreleased.js       # Atualiza a seção Unreleased
+│   ├── promote-release.js         # Promove Unreleased para release
 │   └── test-changelog.js          # Script de testes
 ├── CHANGELOG.md                   # Arquivo de changelog
 ├── package.json                   # Configuração Node.js
@@ -102,7 +122,7 @@ docs: atualizar instruções de instalação
 
 ## Mais informações
 
-- [Conventional Commits](https://www.conventionalcommits.org/)
-- [Semantic Versioning](https://semver.org/)
+- [Conventional Commits](https://www.conventionalcommits.org/pt-br/v1.0.0/)
+- [Semantic Versioning](https://semver.org/lang/pt-BR/)
 - [Keep a Changelog](https://keepachangelog.com/pt-BR/)
 - [GitHub Actions](https://docs.github.com/pt/actions)
