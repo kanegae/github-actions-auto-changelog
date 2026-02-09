@@ -70,7 +70,7 @@ function formatSubject(subject) {
     return normalizeRefs(`Atualizar changelog para ${updateRelease[1]}`);
   }
   if (/^update unreleased changelog$/i.test(cleaned)) {
-    return normalizeRefs('Atualização do changelog do "Não publicado"');
+    return normalizeRefs('Atualização da seção "Não publicado" do changelog');
   }
   if (!cleaned) return cleaned;
   const normalized = cleaned[0].toUpperCase() + cleaned.slice(1);

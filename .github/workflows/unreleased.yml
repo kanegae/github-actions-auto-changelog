@@ -47,5 +47,5 @@ jobs:
           git config --local user.name "GitHub Action"
 
           git add CHANGELOG.md
-          git commit -m 'docs: Atualização do changelog do "Não publicado"' || echo "Sem mudanças"
+          git commit -m 'docs: Atualização da seção "Não publicado" do changelog' || echo "Sem mudanças"
           git push origin "$BRANCH"

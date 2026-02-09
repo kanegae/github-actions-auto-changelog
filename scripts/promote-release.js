@@ -123,9 +123,15 @@ function promoteRelease() {
   }
 
   const newUnreleased = buildUnreleasedSection();
-  const updated = ensureHistoryHeading(content).replace(
+  const withHistory = ensureHistoryHeading(content);
+  let updated = withHistory.replace(
     /## \[Não publicado\][\s\S]*?^---\s*$\n*/m,
-    newUnreleased.trimEnd() + '\n\n' + releaseSection + '\n'
+    newUnreleased.trimEnd() + '\n\n'
+  );
+
+  updated = updated.replace(
+    /## \[Histórico\]\n\n/,
+    `## [Histórico]\n\n${releaseSection}\n`
   );
 
   fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());

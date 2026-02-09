@@ -3,6 +3,39 @@
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
+## [Não publicado]
+
+### Adicionado
+
+- Sem mudanças
+
+### Corrigido
+
+- Sem mudanças
+
+### Documentação
+
+- Atualizar changelog para v1.3 - GitHub Action
+
+### Alterado
+
+- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
+- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
+
+### Descontinuado
+
+- Sem mudanças
+
+### Removido
+
+- Sem mudanças
+
+### Segurança
+
+- Sem mudanças
+
+---
+
 ## [Histórico]
 
 ## [1.3] - 2026-02-06
@@ -13,7 +46,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Documentação
 
-- Atualização do changelog do "Não publicado" - GitHub Action
+- Atualização da seção "Não publicado" do changelog - GitHub Action
 - Ajustes no README - Anderson Kanegae Soares Rocha
 - Atualização do changelog para v1.2 - GitHub Action
 

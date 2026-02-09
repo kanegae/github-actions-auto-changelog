@@ -36,6 +36,7 @@ seção `"Não publicado"` em merges e promoção para versão em releases na br
 4. **CHANGELOG.md**
    - Armazena o histórico de mudanças
    - Mantém `"Não publicado"` no topo quando gerado por `changelog:unreleased`
+   - Organiza os releases sob `## [Histórico]`
    - Segue o padrão Keep a Changelog
 
 ## Requisitos

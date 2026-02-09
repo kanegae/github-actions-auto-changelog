@@ -110,6 +110,7 @@ results.push(runTest('Script generate-changelog válido', () => {
 ======================================================= */
 results.push(runTest('Executar geração de changelog', () => {
   runNodeScript('scripts/generate-changelog.js');
+  runNodeScript('scripts/update-unreleased.js');
 }));
 
 /* =======================================================
