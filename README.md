@@ -5,30 +5,36 @@ Prova de conceito para validar o uso de GitHub Actions na geração automática 
 ## Objetivo
 
 Validar um workflow que mantenha o `CHANGELOG.md` atualizado a partir do histórico Git, com uma
-sessão `Unreleased` em merges e promoção para versão em tags ou releases.
+    sessão `Não publicado` em merges e promoção para versão em releases na master.
 
 ## Como funciona
 
+### Configuracao
+
+- `RELEASE_BRANCH` em `/.github/workflows/changelog.yml`: branch usada para validar releases e receber o commit do changelog.
+- `UNRELEASED_BRANCH` em `/.github/workflows/unreleased.yml`: branch alvo do Não publicado e do commit automatizado.
+
 ### Componentes principais
 
-1. **Workflow de Unreleased** (`.github/workflows/unreleased.yml`)
-   - Dispara em push nas branches principais
-   - Atualiza apenas a sessão `Unreleased`
+1. **Workflow de Não publicado** (`.github/workflows/unreleased.yml`)
+   - Dispara em PR fechado na branch `development` (apenas quando o PR é mergeado)
+   - Atualiza apenas a sessão `Não publicado`
    - Faz commit e push das mudanças automaticamente
 
 2. **Workflow de Release** (`.github/workflows/changelog.yml`)
-   - Dispara quando uma tag `v*` é criada
-   - Promove o conteúdo de `Unreleased` para uma versão com data
+   - Dispara quando um release é publicado
+   - Valida se o release foi feito a partir da `master`
+   - Promove o conteúdo de `Não publicado` para uma versão com data
    - Faz commit e push das mudanças automaticamente
 
 3. **Scripts de changelog**
-   - `scripts/update-unreleased.js`: atualiza a sessão `Unreleased`
-   - `scripts/promote-release.js`: promove `Unreleased` para versão
+   - `scripts/update-unreleased.js`: atualiza a sessão `Não publicado`
+   - `scripts/promote-release.js`: promove `Não publicado` para versão
    - `scripts/generate-changelog.js`: gera o changelog completo (uso manual)
 
 4. **CHANGELOG.md**
    - Armazena o histórico de mudanças
-   - Mantém `Unreleased` no topo
+   - Mantém `Não publicado` no topo
    - Segue o padrão Keep a Changelog
 
 ## Requisitos
@@ -57,21 +63,16 @@ npm run changelog
 
 ## Uso via GitHub Actions
 
-1. Merge na branch principal atualiza `Unreleased` automaticamente.
+1. Merge em `development` atualiza `Não publicado` automaticamente.
 
-2. Crie uma tag para promover o release:
-   ```bash
-   git tag v1.0.0
-   git push origin v1.0.0
-   ```
-
-3. Ou publique um release no GitHub:
+2. Publique um release no GitHub:
    - Acesse a página de releases do repositório
    - Clique em "Create a new release"
    - Selecione ou crie uma tag
+   - Escolha `master` como base do release
    - Publique o release
 
-4. O workflow promove `Unreleased` para a nova versão e faz commit/push.
+3. O workflow promove `Não publicado` para a nova versão e faz commit/push.
 
 ## Convenção de commits
 
@@ -100,11 +101,11 @@ docs: atualizar instruções de instalação
 ├── .github/
 │   └── workflows/
 │       ├── changelog.yml          # Workflow de release
-│       └── unreleased.yml         # Workflow de Unreleased
+│       └── unreleased.yml         # Workflow de Não publicado
 ├── scripts/
 │   ├── generate-changelog.js      # Script de geração de changelog
-│   ├── update-unreleased.js       # Atualiza a seção Unreleased
-│   ├── promote-release.js         # Promove Unreleased para release
+│   ├── update-unreleased.js       # Atualiza a seção Não publicado
+│   ├── promote-release.js         # Promove Não publicado para release
 │   └── test-changelog.js          # Script de testes
 ├── CHANGELOG.md                   # Arquivo de changelog
 ├── package.json                   # Configuração Node.js

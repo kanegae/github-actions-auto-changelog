@@ -1,9 +1,12 @@
 name: Auto Generate Changelog
 
+env:
+  RELEASE_BRANCH: master
+
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types:
+      - published
 
 permissions:
   contents: write
@@ -27,36 +30,40 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Prepare release info
+      - name: Validate release on master
+        id: detect_branch
         run: |
-          echo "RELEASE_VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+          echo "Validando release na $RELEASE_BRANCH..."
+
+          TAG="${{ github.event.release.tag_name }}"
+          TARGET_COMMITISH="${{ github.event.release.target_commitish }}"
+
+          git fetch origin "$RELEASE_BRANCH" --tags
+
+          TAG_COMMIT="$(git rev-list -n 1 "refs/tags/$TAG")"
+
+          if ! git merge-base --is-ancestor "$TAG_COMMIT" "origin/$RELEASE_BRANCH"; then
+            echo "Tag $TAG não está contida na $RELEASE_BRANCH (target_commitish: $TARGET_COMMITISH)"
+            echo "SKIP_CHANGELOG=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          echo "Tag validada na $RELEASE_BRANCH (target_commitish: $TARGET_COMMITISH)"
+          echo "TARGET_BRANCH=$RELEASE_BRANCH" >> $GITHUB_ENV
+
+      - name: Prepare release info
+        if: env.SKIP_CHANGELOG != 'true'
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          echo "RELEASE_VERSION=${TAG#v}" >> $GITHUB_ENV
           echo "RELEASE_DATE=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
 
       - name: Promote unreleased to release
+        if: env.SKIP_CHANGELOG != 'true'
         run: npm run changelog:release -- --version "$RELEASE_VERSION" --date "$RELEASE_DATE"
 
-      # 🔍 detectar branch da tag
-      - name: Detect branch of tag
-        id: detect_branch
-        run: |
-          echo "Detectando branch da tag..."
-
-          BRANCH=$(git branch -r --contains "${GITHUB_SHA}" \
-            | grep -v '->' \
-            | sed 's|origin/||' \
-            | head -n 1 \
-            | tr -d '[:space:]')
-
-          if [ -z "$BRANCH" ]; then
-            BRANCH="development"
-            echo "Fallback para development"
-          fi
-
-          echo "Branch detectada: $BRANCH"
-          echo "TARGET_BRANCH=$BRANCH" >> $GITHUB_ENV
-
-      # 🧾 commit e push
       - name: Commit and push changelog
+        if: env.SKIP_CHANGELOG != 'true'
         run: |
           echo "Usando branch: $TARGET_BRANCH"
 
@@ -67,11 +74,11 @@ jobs:
           git config --local user.name "GitHub Action"
 
           git add CHANGELOG.md
-          git commit -m "docs: update changelog for ${{ github.ref }}" || echo "Sem mudanças"
+          git commit -m "docs: Atualização do changelog para ${{ github.ref }}" || echo "Sem mudanças"
           git push origin "$TARGET_BRANCH"
 
-      # 🚀 atualizar release
       - name: Update GitHub Release
+        if: env.SKIP_CHANGELOG != 'true'
         uses: softprops/action-gh-release@v2
         with:
           body_path: CHANGELOG.md

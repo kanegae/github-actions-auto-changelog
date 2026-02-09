@@ -3,71 +3,87 @@
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
-## [Unreleased]
-### Added
+## [Não publicado]
+
+### Adicionado
+
 -
 
-### Fixed
+### Corrigido
+
 -
 
-### Changed
+### Alterado
+
 -
 
-### Deprecated
+### Descontinuado
+
 -
 
-### Removed
+### Removido
+
 -
 
-### Security
+### Segurança
+
 -
 
 ---
 
 ## [1.3] - 2026-02-06
-### Added
-- feat: Github Action para atualizar sessão unreleased do changelog a cada PR aceito (ed12d7f) - Anderson Kanegae Soares Rocha
 
-### Changed
-- docs: Ajustes no README (d3cb079) - Anderson Kanegae Soares Rocha
-- docs: update changelog for refs/tags/v1.2 (ef2f9a0) - GitHub Action
+### Adicionado
 
-## [1.2] - 06/02/2026
+- Github Action para atualizar sessão unreleased do changelog a cada PR aceito (ed12d7f) - Anderson Kanegae Soares Rocha
 
-### Documentation
+### Documentação
 
-- docs: Reorganização do README (1ca2df9) - Anderson Kanegae Soares Rocha
-- docs: update changelog for refs/tags/v1.1 (00eb1f0) - GitHub Action
+- Atualizar changelog do não publicado (0c20c09) - GitHub Action
+- Ajustes no README (d3cb079) - Anderson Kanegae Soares Rocha
+- Atualizar changelog para refs/tags/v1.2 (ef2f9a0) - GitHub Action
 
-## [1.1] - 05/02/2026
+## [1.2] - 2026-02-06
 
-### Documentation
+### Documentação
 
-- docs: Melhorias no README (ed62659) - Anderson Kanegae Soares Rocha
-- docs: update changelog for refs/tags/v1.0 (8dbf5aa) - GitHub Action
+- Reorganização do README (1ca2df9) - Anderson Kanegae Soares Rocha
+- Atualizar changelog para refs/tags/v1.1 (00eb1f0) - GitHub Action
 
-## [1.0] - 05/02/2026
+## [1.1] - 2026-02-05
 
-### Features
+### Documentação
 
-- feat: Github Action para gerar changelog (5fc0853) - Anderson Kanegae Soares Rocha
+- Melhorias no README (ed62659) - Anderson Kanegae Soares Rocha
+- Atualizar changelog para refs/tags/v1.0 (8dbf5aa) - GitHub Action
 
-### Bug Fixes
+## [1.0] - 2026-02-05
 
-- fix: Correção dos scripts  no Github Action (fc5ffe9) - Anderson Kanegae Soares Rocha
-- fix: Correção no Github Action para detecção da branch atual com fallback (ee3f1b9) - Anderson Kanegae Soares Rocha
-- fix: Correção no Github Action para gerar changelog na branch atual (d815fb7) - Anderson Kanegae Soares Rocha
-- fix: Correção no Github Action para gerar changelog na branch atual (af9adf0) - Anderson Kanegae Soares Rocha
-- fix: Correção de texto (4aabe8b) - Anderson Kanegae Soares Rocha
+### Corrigido
 
-### Documentation
+- Correção dos scripts  no Github Action (fc5ffe9) - Anderson Kanegae Soares Rocha
 
-- docs: update changelog for refs/tags/v1.0-test (aed2fee) - GitHub Action
+### Documentação
 
-### Refactoring
+- Atualizar changelog para refs/tags/v1.0-test (aed2fee) - GitHub Action
 
-- refactor: Melhorias gerais na geração de changelog (be9c11e) - Anderson Kanegae Soares Rocha
+## [1.0-test] - 2026-02-05
 
-### Other
+### Adicionado
+
+- Github Action para gerar changelog (5fc0853) - Anderson Kanegae Soares Rocha
+
+### Corrigido
+
+- Correção no Github Action para detecção da branch atual com fallback (ee3f1b9) - Anderson Kanegae Soares Rocha
+- Correção no Github Action para gerar changelog na branch atual (d815fb7) - Anderson Kanegae Soares Rocha
+- Correção no Github Action para gerar changelog na branch atual (af9adf0) - Anderson Kanegae Soares Rocha
+- Correção de texto (4aabe8b) - Anderson Kanegae Soares Rocha
+
+### Refatoração
+
+- Melhorias gerais na geração de changelog (be9c11e) - Anderson Kanegae Soares Rocha
+
+### Outros
 
 - Commit inicial (05e6921) - Anderson Kanegae Soares Rocha

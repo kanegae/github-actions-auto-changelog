@@ -77,8 +77,11 @@ results.push(runTest('Estrutura básica do projeto', () => {
    TESTE 2 — Workflow GitHub Actions
 ======================================================= */
 results.push(runTest('Workflow GitHub Actions válido', () => {
-  testFileContains('.github/workflows/changelog.yml', 'Auto Generate Changelog');
-  testFileContains('.github/workflows/changelog.yml', 'npm run changelog');
+  testFileContains('.github/workflows/changelog.yml', 'Geração do changelog');
+  testFileContains('.github/workflows/changelog.yml', 'release:');
+  testFileContains('.github/workflows/changelog.yml', 'npm run changelog:release');
+  testFileContains('.github/workflows/unreleased.yml', 'Atualização do changelog do não publicado');
+  testFileContains('.github/workflows/unreleased.yml', 'UNRELEASED_BRANCH');
 }));
 
 /* =======================================================
@@ -132,7 +135,7 @@ results.push(runTest('CHANGELOG não está vazio', () => {
 ======================================================= */
 results.push(runTest('.gitignore básico', () => {
   if (!fileExists('.gitignore')) {
-    log('Aviso: .gitignore não encontrado (ok se não usar)', 'yellow');
+    log('Aviso: .gitignore não encontrado', 'yellow');
     return;
   }
 

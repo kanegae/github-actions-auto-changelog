@@ -5,12 +5,12 @@ const path = require('path');
 
 const CHANGELOG_PATH = path.join(process.cwd(), 'CHANGELOG.md');
 const CATEGORY_ORDER = [
-  'Added',
-  'Fixed',
-  'Changed',
-  'Deprecated',
-  'Removed',
-  'Security'
+  'Adicionado',
+  'Corrigido',
+  'Alterado',
+  'Descontinuado',
+  'Removido',
+  'Segurança'
 ];
 
 function getArgValue(flag) {
@@ -33,14 +33,14 @@ function getDate() {
 }
 
 function buildUnreleasedSection() {
-  let section = '## [Unreleased]\n';
+  let section = '## [Não publicado]\n\n';
 
   CATEGORY_ORDER.forEach(category => {
-    section += `### ${category}\n`;
+    section += `### ${category}\n\n`;
     section += '-\n\n';
   });
 
-  section += '---\n';
+  section += '---\n\n';
   return section;
 }
 
@@ -104,9 +104,9 @@ function promoteRelease() {
   const date = getDate();
   const content = fs.readFileSync(CHANGELOG_PATH, 'utf-8');
 
-  const match = content.match(/## \[Unreleased\]\n([\s\S]*?)\n---/);
+  const match = content.match(/## \[Não publicado\]\n([\s\S]*?)\n---/);
   if (!match) {
-    console.error('Sessão [Unreleased] não encontrada no CHANGELOG.md.');
+    console.error('Sessão [Não publicado] não encontrada no CHANGELOG.md.');
     process.exit(1);
   }
 
@@ -114,13 +114,13 @@ function promoteRelease() {
   const releaseSection = buildReleaseSection(version, date, categories);
 
   if (!releaseSection) {
-    console.log('Sem entradas em [Unreleased]. Nada para promover.');
+    console.log('Sem entradas em [Não publicado]. Nada para promover.');
     return;
   }
 
   const newUnreleased = buildUnreleasedSection();
   const updated = content.replace(
-    /## \[Unreleased\][\s\S]*?^---\s*$/m,
+    /## \[Não publicado\][\s\S]*?^---\s*$/m,
     newUnreleased.trimEnd() + '\n\n' + releaseSection + '\n'
   );
 

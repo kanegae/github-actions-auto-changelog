@@ -46,21 +46,48 @@ function parseCommit(line) {
   return { hash, subject, author, email, date };
 }
 
+function extractGithubHandle(email) {
+  if (!email) return null;
+  const match = email.match(/^[^@]+@users\.noreply\.github\.com$/);
+  if (!match) return null;
+  const local = email.split('@')[0];
+  const plusIdx = local.indexOf('+');
+  const handle = plusIdx !== -1 ? local.slice(plusIdx + 1) : local;
+  return handle ? `@${handle}` : null;
+}
+
+function formatAuthor(author, email) {
+  return extractGithubHandle(email) || author;
+}
+
 function categorizeCommit(subject) {
   const s = subject.toLowerCase();
-  if (/^feat(\(.+\))?:/.test(s)) return 'Features';
-  if (/^fix(\(.+\))?:/.test(s)) return 'Bug Fixes';
-  if (/^docs(\(.+\))?:/.test(s)) return 'Documentation';
-  if (/^perf(\(.+\))?:/.test(s)) return 'Performance';
-  if (/^refactor(\(.+\))?:/.test(s)) return 'Refactoring';
-  if (/^style(\(.+\))?:/.test(s)) return 'Styles';
-  if (/^test(\(.+\))?:/.test(s)) return 'Tests';
-  if (/^chore(\(.+\))?:/.test(s)) return 'Chores';
-  return 'Other';
+  if (/^feat(\(.+\))?:/.test(s)) return 'Adicionado';
+  if (/^fix(\(.+\))?:/.test(s)) return 'Corrigido';
+  if (/^docs(\(.+\))?:/.test(s)) return 'Documentação';
+  if (/^perf(\(.+\))?:/.test(s)) return 'Desempenho';
+  if (/^refactor(\(.+\))?:/.test(s)) return 'Refatoração';
+  if (/^style(\(.+\))?:/.test(s)) return 'Estilo';
+  if (/^test(\(.+\))?:/.test(s)) return 'Testes';
+  if (/^chore(\(.+\))?:/.test(s)) return 'Manutenção';
+  return 'Outros';
+}
+
+function formatSubject(subject) {
+  const cleaned = subject.replace(/^[a-z]+(\([^)]+\))?!?:\s*/i, '');
+  const updateRelease = cleaned.match(/^update changelog for (.+)$/i);
+  if (updateRelease) {
+    return `Atualização changelog para ${updateRelease[1]}`;
+  }
+  if (/^update unreleased changelog$/i.test(cleaned)) {
+    return 'Atualização changelog do não publicado';
+  }
+  if (!cleaned) return cleaned;
+  return cleaned[0].toUpperCase() + cleaned.slice(1);
 }
 
 function formatDate(date) {
-  return new Date(date).toLocaleDateString('pt-BR');
+  return new Date(date).toISOString().slice(0, 10);
 }
 
 function generateEntry(version, commits) {
@@ -78,15 +105,15 @@ function generateEntry(version, commits) {
   });
 
   const order = [
-    'Features',
-    'Bug Fixes',
-    'Documentation',
-    'Performance',
-    'Refactoring',
-    'Styles',
-    'Tests',
-    'Chores',
-    'Other'
+    'Adicionado',
+    'Corrigido',
+    'Documentação',
+    'Desempenho',
+    'Refatoração',
+    'Estilo',
+    'Testes',
+    'Manutenção',
+    'Outros'
   ];
 
   order.forEach(category => {
@@ -94,7 +121,8 @@ function generateEntry(version, commits) {
 
     entry += `### ${category}\n\n`;
     categories[category].forEach(c => {
-      entry += `- ${c.subject} (${c.hash}) - ${c.author}\n`;
+      const subject = formatSubject(c.subject);
+      entry += `- ${subject} (${c.hash}) - ${formatAuthor(c.author, c.email)}\n`;
     });
     entry += '\n';
   });
@@ -125,7 +153,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
     console.log(
       `Processando ${current}` +
-      (previous ? ` (desde ${previous})` : ' (primeira release)')
+      (previous ? ` (desde ${previous}).` : ' (primeira release).')
     );
 
     const rawCommits = previous
@@ -139,7 +167,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
   }
 
   fs.writeFileSync(changelogPath, content);
-  console.log(`✓ CHANGELOG.md gerado com sucesso`);
+  console.log('CHANGELOG.md gerado com sucesso.');
 }
 
 generateChangelog();

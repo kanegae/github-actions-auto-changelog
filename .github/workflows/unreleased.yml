@@ -1,18 +1,21 @@
 name: Update Unreleased Changelog
 
+env:
+  UNRELEASED_BRANCH: development
+
 on:
-  push:
+  pull_request:
     branches:
-      - "main"
-      - "master"
-      - "development"
+      - "development" # manter em sincronia com env.UNRELEASED_BRANCH
+    types:
+      - closed
 
 permissions:
   contents: write
 
 jobs:
   changelog_unreleased:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
 
     steps:
@@ -20,6 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ env.UNRELEASED_BRANCH }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,12 +33,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Update Unreleased section
+      - name: Update unreleased changelog
         run: npm run changelog:unreleased
 
       - name: Commit and push changelog
         run: |
-          BRANCH="${GITHUB_REF_NAME}"
+          BRANCH="${{ env.UNRELEASED_BRANCH }}"
 
           git checkout "$BRANCH"
           git pull origin "$BRANCH"
@@ -43,5 +47,5 @@ jobs:
           git config --local user.name "GitHub Action"
 
           git add CHANGELOG.md
-          git commit -m "docs: update unreleased changelog" || echo "Sem mudanças"
+          git commit -m "docs: Atualização do changelog do não publicado" || echo "Sem mudanças"
           git push origin "$BRANCH"
