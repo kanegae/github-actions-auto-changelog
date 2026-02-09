@@ -7,11 +7,14 @@ const CHANGELOG_PATH = path.join(process.cwd(), 'CHANGELOG.md');
 const CATEGORY_ORDER = [
   'Adicionado',
   'Corrigido',
+  'Documentação',
   'Alterado',
   'Descontinuado',
   'Removido',
   'Segurança'
 ];
+const HISTORY_HEADING = '## [Histórico]';
+const LEGACY_HISTORY_HEADING = '## Lançamentos';
 
 function getArgValue(flag) {
   const idx = process.argv.indexOf(flag);
@@ -37,7 +40,7 @@ function buildUnreleasedSection() {
 
   CATEGORY_ORDER.forEach(category => {
     section += `### ${category}\n\n`;
-    section += '-\n\n';
+    section += '- Sem mudanças\n\n';
   });
 
   section += '---\n\n';
@@ -64,6 +67,7 @@ function parseUnreleased(body) {
 
     const text = item[1].trim();
     if (!text) return;
+    if (text === 'Sem mudanças') return;
 
     categories[current].push(text);
   });
@@ -106,7 +110,7 @@ function promoteRelease() {
 
   const match = content.match(/## \[Não publicado\]\n([\s\S]*?)\n---/);
   if (!match) {
-    console.error('Sessão [Não publicado] não encontrada no CHANGELOG.md.');
+    console.error('Sessão "Não publicado" não encontrada no CHANGELOG.md.');
     process.exit(1);
   }
 
@@ -114,18 +118,26 @@ function promoteRelease() {
   const releaseSection = buildReleaseSection(version, date, categories);
 
   if (!releaseSection) {
-    console.log('Sem entradas em [Não publicado]. Nada para promover.');
+    console.log('Sem entradas em "Não publicado". Nada para promover.');
     return;
   }
 
   const newUnreleased = buildUnreleasedSection();
-  const updated = content.replace(
-    /## \[Não publicado\][\s\S]*?^---\s*$/m,
+  const updated = ensureHistoryHeading(content).replace(
+    /## \[Não publicado\][\s\S]*?^---\s*$\n*/m,
     newUnreleased.trimEnd() + '\n\n' + releaseSection + '\n'
   );
 
-  fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd() + '\n');
-  console.log(`✓ Release ${version} promovida no CHANGELOG.md`);
+  fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
+  console.log(`Release ${version} promovida no CHANGELOG.md`);
+}
+
+function ensureHistoryHeading(content) {
+  if (content.includes(HISTORY_HEADING)) return content;
+  if (content.includes(LEGACY_HISTORY_HEADING)) {
+    return content.replace(LEGACY_HISTORY_HEADING, HISTORY_HEADING);
+  }
+  return content.replace(/---\n\n/, `---\n\n${HISTORY_HEADING}\n\n`);
 }
 
 promoteRelease();

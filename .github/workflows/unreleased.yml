@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Update unreleased changelog
+      - name: Generate unreleased changelog
         run: npm run changelog:unreleased
 
       - name: Commit and push changelog
@@ -47,5 +47,5 @@ jobs:
           git config --local user.name "GitHub Action"
 
           git add CHANGELOG.md
-          git commit -m "docs: Atualização do changelog do não publicado" || echo "Sem mudanças"
+          git commit -m 'docs: Atualização do changelog do "Não publicado"' || echo "Sem mudanças"
           git push origin "$BRANCH"

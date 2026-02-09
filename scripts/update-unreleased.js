@@ -8,6 +8,7 @@ const CHANGELOG_PATH = path.join(process.cwd(), 'CHANGELOG.md');
 const CATEGORY_ORDER = [
   'Adicionado',
   'Corrigido',
+  'Documentação',
   'Alterado',
   'Descontinuado',
   'Removido',
@@ -47,27 +48,15 @@ function parseCommit(line) {
   return { hash, subject, author, email, date };
 }
 
-function extractGithubHandle(email) {
-  if (!email) return null;
-  const match = email.match(/^[^@]+@users\.noreply\.github\.com$/);
-  if (!match) return null;
-  const local = email.split('@')[0];
-  const plusIdx = local.indexOf('+');
-  const handle = plusIdx !== -1 ? local.slice(plusIdx + 1) : local;
-  return handle ? `@${handle}` : null;
-}
-
-function formatAuthor(author, email) {
-  return extractGithubHandle(email) || author;
-}
 
 function categorizeCommit(subject) {
   const s = subject.toLowerCase();
   if (/^feat(\(.+\))?:/.test(s)) return 'Adicionado';
   if (/^fix(\(.+\))?:/.test(s)) return 'Corrigido';
+  if (/^docs(\(.+\))?:/.test(s)) return 'Documentação';
   if (/^security(\(.+\))?:/.test(s)) return 'Segurança';
   if (
-    /^(perf|refactor|style|docs|test|chore|revert)(\(.+\))?:/.test(s)
+    /^(perf|refactor|style|test|chore|revert)(\(.+\))?:/.test(s)
   ) {
     return 'Alterado';
   }
@@ -78,13 +67,20 @@ function formatSubject(subject) {
   const cleaned = subject.replace(/^[a-z]+(\([^)]+\))?!?:\s*/i, '');
   const updateRelease = cleaned.match(/^update changelog for (.+)$/i);
   if (updateRelease) {
-    return `Atualizar changelog para ${updateRelease[1]}`;
+    return normalizeRefs(`Atualizar changelog para ${updateRelease[1]}`);
   }
   if (/^update unreleased changelog$/i.test(cleaned)) {
-    return 'Atualizar changelog do não publicado';
+    return normalizeRefs('Atualização do changelog do "Não publicado"');
   }
   if (!cleaned) return cleaned;
-  return cleaned[0].toUpperCase() + cleaned.slice(1);
+  const normalized = cleaned[0].toUpperCase() + cleaned.slice(1);
+  return normalizeRefs(normalized);
+}
+
+function normalizeRefs(text) {
+  return text
+    .replace(/refs\/tags\/([^\s]+)/g, '$1')
+    .replace(/refs\/heads\/([^\s]+)/g, '$1');
 }
 
 function buildUnreleasedSection(categories) {
@@ -97,10 +93,10 @@ function buildUnreleasedSection(categories) {
     if (items.length) {
       items.forEach(c => {
         const subject = formatSubject(c.subject);
-        section += `- ${subject} (${c.hash}) - ${formatAuthor(c.author, c.email)}\n`;
+        section += `- ${subject} - ${c.author}\n`;
       });
     } else {
-      section += '-\n';
+      section += '- Sem mudanças\n';
     }
 
     section += '\n';
@@ -119,26 +115,36 @@ function loadChangelog() {
   return content.trim() ? content : DEFAULT_HEADER + buildUnreleasedSection({});
 }
 
+const HISTORY_HEADING = '## [Histórico]';
+const LEGACY_HISTORY_HEADING = '## Lançamentos';
+
 function insertUnreleasedIfMissing(content, section) {
   if (content.includes('## [Não publicado]')) return content;
 
   const introMatch = content.match(/# Changelog[\s\S]*?O formato.*\n\n/);
+  const baseContent = introMatch
+    ? content.slice(0, introMatch[0].length) + section + content.slice(introMatch[0].length)
+    : section + content;
 
-  if (introMatch) {
-    const idx = introMatch[0].length;
-    return content.slice(0, idx) + section + '\n' + content.slice(idx);
-  }
-
-  return section + '\n' + content;
+  return ensureHistoryHeading(baseContent);
 }
 
 function replaceUnreleased(content, section) {
-  const unreleasedRegex = /## \[Não publicado\][\s\S]*?^---\s*$/m;
+  const unreleasedRegex = /## \[Não publicado\][\s\S]*?^---\s*$\n*/m;
   if (unreleasedRegex.test(content)) {
-    return content.replace(unreleasedRegex, section.trimEnd());
+    const withHistory = ensureHistoryHeading(content);
+    return withHistory.replace(unreleasedRegex, section.trimEnd() + '\n\n');
   }
 
   return insertUnreleasedIfMissing(content, section);
+}
+
+function ensureHistoryHeading(content) {
+  if (content.includes(HISTORY_HEADING)) return content;
+  if (content.includes(LEGACY_HISTORY_HEADING)) {
+    return content.replace(LEGACY_HISTORY_HEADING, HISTORY_HEADING);
+  }
+  return content.replace(/---\n\n/, `---\n\n${HISTORY_HEADING}\n\n`);
 }
 
 function updateUnreleased() {
@@ -158,8 +164,8 @@ function updateUnreleased() {
   const content = loadChangelog();
   const updated = replaceUnreleased(content, newSection);
 
-  fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd() + '\n');
-  console.log('CHANGELOG.md (unreleased) atualizado com sucesso');
+  fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
+  console.log('CHANGELOG.md "Não publicado" atualizado com sucesso.');
 }
 
 updateUnreleased();

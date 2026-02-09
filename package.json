@@ -10,7 +10,7 @@
     "changelog:release": "node scripts/promote-release.js",
     "test": "node scripts/test-changelog.js",
     "test:full": "npm run changelog && npm run test",
-    "lint:changelog": "node scripts/generate-changelog.js --dry-run || true"
+    "lint:changelog": "node scripts/generate-changelog.js || true"
   },
   "keywords": [
     "github-actions",

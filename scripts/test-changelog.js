@@ -1,11 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * Script de teste para validar o gerador de changelog
- * Execute com:
- * node scripts/test-changelog.js
- */
-
 const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
@@ -69,18 +63,28 @@ const results = [];
 ======================================================= */
 results.push(runTest('Estrutura básica do projeto', () => {
   testFileExists('.github/workflows/changelog.yml');
+  testFileExists('.github/workflows/unreleased.yml');
   testFileExists('scripts/generate-changelog.js');
+  testFileExists('scripts/update-unreleased.js');
+  testFileExists('scripts/promote-release.js');
   testFileExists('package.json');
+  testFileExists('README.md');
+  testFileExists('CHANGELOG.md');
 }));
 
 /* =======================================================
    TESTE 2 — Workflow GitHub Actions
 ======================================================= */
 results.push(runTest('Workflow GitHub Actions válido', () => {
-  testFileContains('.github/workflows/changelog.yml', 'Geração do changelog');
   testFileContains('.github/workflows/changelog.yml', 'release:');
+  testFileContains('.github/workflows/changelog.yml', 'published');
   testFileContains('.github/workflows/changelog.yml', 'npm run changelog:release');
-  testFileContains('.github/workflows/unreleased.yml', 'Atualização do changelog do não publicado');
+  testFileContains('.github/workflows/changelog.yml', 'actions/checkout@v4');
+  testFileContains('.github/workflows/unreleased.yml', 'pull_request:');
+  testFileContains('.github/workflows/unreleased.yml', 'types:');
+  testFileContains('.github/workflows/unreleased.yml', 'closed');
+  testFileContains('.github/workflows/unreleased.yml', 'development');
+  testFileContains('.github/workflows/unreleased.yml', 'npm run changelog:unreleased');
   testFileContains('.github/workflows/unreleased.yml', 'UNRELEASED_BRANCH');
 }));
 
@@ -160,9 +164,8 @@ log(`║ Resultado: ${passed}/${total} testes passaram`, 'blue');
 if (failed > 0) {
   log(`║ ${failed} teste(s) falharam.`, 'red');
 } else {
-  log('║ ✓ Todos os testes passaram com sucesso!', 'green');
+  log('║ Todos os testes passaram com sucesso!', 'green');
 }
-
 log('╚════════════════════════════════════════════════════╝', 'blue');
 
 process.exit(failed > 0 ? 1 : 0);

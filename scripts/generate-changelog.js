@@ -4,12 +4,6 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
 
-/**
- * Gera CHANGELOG.md automaticamente a partir do histórico Git.
- * - Primeira tag: histórico completo até a tag
- * - Demais tags: commits entre tags
- */
-
 function run(cmd) {
   return execSync(cmd, { encoding: 'utf-8' }).trim();
 }
@@ -46,20 +40,6 @@ function parseCommit(line) {
   return { hash, subject, author, email, date };
 }
 
-function extractGithubHandle(email) {
-  if (!email) return null;
-  const match = email.match(/^[^@]+@users\.noreply\.github\.com$/);
-  if (!match) return null;
-  const local = email.split('@')[0];
-  const plusIdx = local.indexOf('+');
-  const handle = plusIdx !== -1 ? local.slice(plusIdx + 1) : local;
-  return handle ? `@${handle}` : null;
-}
-
-function formatAuthor(author, email) {
-  return extractGithubHandle(email) || author;
-}
-
 function categorizeCommit(subject) {
   const s = subject.toLowerCase();
   if (/^feat(\(.+\))?:/.test(s)) return 'Adicionado';
@@ -77,13 +57,20 @@ function formatSubject(subject) {
   const cleaned = subject.replace(/^[a-z]+(\([^)]+\))?!?:\s*/i, '');
   const updateRelease = cleaned.match(/^update changelog for (.+)$/i);
   if (updateRelease) {
-    return `Atualização changelog para ${updateRelease[1]}`;
+    return normalizeRefs(`Atualização do changelog para ${updateRelease[1]}`);
   }
   if (/^update unreleased changelog$/i.test(cleaned)) {
-    return 'Atualização changelog do não publicado';
+    return normalizeRefs('Atualização do changelog do "Não publicado"');
   }
   if (!cleaned) return cleaned;
-  return cleaned[0].toUpperCase() + cleaned.slice(1);
+  const normalized = cleaned[0].toUpperCase() + cleaned.slice(1);
+  return normalizeRefs(normalized);
+}
+
+function normalizeRefs(text) {
+  return text
+    .replace(/refs\/tags\/([^\s]+)/g, '$1')
+    .replace(/refs\/heads\/([^\s]+)/g, '$1');
 }
 
 function formatDate(date) {
@@ -122,7 +109,7 @@ function generateEntry(version, commits) {
     entry += `### ${category}\n\n`;
     categories[category].forEach(c => {
       const subject = formatSubject(c.subject);
-      entry += `- ${subject} (${c.hash}) - ${formatAuthor(c.author, c.email)}\n`;
+      entry += `- ${subject} - ${c.author}\n`;
     });
     entry += '\n';
   });
@@ -139,10 +126,12 @@ function generateChangelog() {
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
+## [Histórico]
+
 `;
 
   if (!tags.length) {
-    fs.writeFileSync(changelogPath, content);
+    fs.writeFileSync(changelogPath, content.trimEnd());
     console.log('Nenhuma tag encontrada. Changelog base criado.');
     return;
   }
@@ -166,7 +155,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
     content += entry;
   }
 
-  fs.writeFileSync(changelogPath, content);
+  fs.writeFileSync(changelogPath, content.trimEnd());
   console.log('CHANGELOG.md gerado com sucesso.');
 }
 
