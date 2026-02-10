@@ -9,10 +9,11 @@ const CATEGORY_ORDER = [
   'Adicionado',
   'Corrigido',
   'Documentação',
-  'Alterado',
-  'Descontinuado',
-  'Removido',
-  'Segurança'
+  'Estilo',
+  'Refatoração',
+  'Desempenho',
+  'Testes',
+  'Manutenção'
 ];
 
 const DEFAULT_HEADER =
@@ -49,18 +50,17 @@ function parseCommit(line) {
 }
 
 
-function categorizeCommit(subject) {
+function categorizeTitle(subject) {
   const s = subject.toLowerCase();
-  if (/^feat(\(.+\))?:/.test(s)) return 'Adicionado';
-  if (/^fix(\(.+\))?:/.test(s)) return 'Corrigido';
-  if (/^docs(\(.+\))?:/.test(s)) return 'Documentação';
-  if (/^security(\(.+\))?:/.test(s)) return 'Segurança';
-  if (
-    /^(perf|refactor|style|test|chore|revert)(\(.+\))?:/.test(s)
-  ) {
-    return 'Alterado';
-  }
-  return 'Alterado';
+  if (/^feat(\(.+\))?!?:/.test(s)) return 'Adicionado';
+  if (/^fix(\(.+\))?!?:/.test(s)) return 'Corrigido';
+  if (/^docs(\(.+\))?!?:/.test(s)) return 'Documentação';
+  if (/^style(\(.+\))?!?:/.test(s)) return 'Estilo';
+  if (/^refactor(\(.+\))?!?:/.test(s)) return 'Refatoração';
+  if (/^perf(\(.+\))?!?:/.test(s)) return 'Desempenho';
+  if (/^test(\(.+\))?!?:/.test(s)) return 'Testes';
+  if (/^(chore|build|ci|revert)(\(.+\))?!?:/.test(s)) return 'Manutenção';
+  return 'Manutenção';
 }
 
 function formatSubject(subject) {
@@ -83,6 +83,13 @@ function normalizeRefs(text) {
     .replace(/refs\/heads\/([^\s]+)/g, '$1');
 }
 
+function formatEntry(subject, author) {
+  const title = formatSubject(subject);
+  if (!title) return '';
+  if (author) return `${title} - ${author}`;
+  return title;
+}
+
 function buildUnreleasedSection(categories) {
   let section = '## [Não publicado]\n\n';
 
@@ -91,9 +98,8 @@ function buildUnreleasedSection(categories) {
     const items = categories[category] || [];
 
     if (items.length) {
-      items.forEach(c => {
-        const subject = formatSubject(c.subject);
-        section += `- ${subject} - ${c.author}\n`;
+      items.forEach(item => {
+        section += `- ${item}\n`;
       });
     } else {
       section += '- Sem mudanças\n';
@@ -116,7 +122,61 @@ function loadChangelog() {
 }
 
 const HISTORY_HEADING = '## [Histórico]';
-const LEGACY_HISTORY_HEADING = '## Lançamentos';
+
+function parseUnreleasedSection(body) {
+  const lines = body.split('\n');
+  const categories = {};
+  let current = null;
+
+  lines.forEach(line => {
+    const heading = line.match(/^###\s+(.*)$/);
+    if (heading) {
+      current = heading[1].trim();
+      categories[current] ??= [];
+      return;
+    }
+
+    if (!current) return;
+
+    const item = line.match(/^- (.*)$/);
+    if (!item) return;
+
+    const text = item[1].trim();
+    if (!text) return;
+    if (text === 'Sem mudanças') return;
+
+    categories[current].push(text);
+  });
+
+  return categories;
+}
+
+function getPullRequestInfo() {
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  if (!eventPath || !fs.existsSync(eventPath)) return null;
+
+  try {
+    const payload = JSON.parse(fs.readFileSync(eventPath, 'utf-8'));
+    if (!payload.pull_request) return null;
+
+    if (payload.pull_request.merged === false) return null;
+
+    const title = payload.pull_request.title?.trim();
+    if (!title) return null;
+
+    const author = payload.pull_request.user?.login || '';
+
+    return { title, author };
+  } catch {
+    return null;
+  }
+}
+
+function getUnreleasedCategories(content) {
+  const match = content.match(/## \[Não publicado\]\n([\s\S]*?)\n---/);
+  if (!match) return {};
+  return parseUnreleasedSection(match[1]);
+}
 
 function insertUnreleasedIfMissing(content, section) {
   if (content.includes('## [Não publicado]')) return content;
@@ -141,13 +201,30 @@ function replaceUnreleased(content, section) {
 
 function ensureHistoryHeading(content) {
   if (content.includes(HISTORY_HEADING)) return content;
-  if (content.includes(LEGACY_HISTORY_HEADING)) {
-    return content.replace(LEGACY_HISTORY_HEADING, HISTORY_HEADING);
-  }
   return content.replace(/---\n\n/, `---\n\n${HISTORY_HEADING}\n\n`);
 }
 
 function updateUnreleased() {
+  const content = loadChangelog();
+  const pullRequest = getPullRequestInfo();
+
+  if (pullRequest) {
+    const categories = getUnreleasedCategories(content);
+    const category = categorizeTitle(pullRequest.title);
+    categories[category] ??= [];
+
+    const entry = formatEntry(pullRequest.title, pullRequest.author);
+    if (entry && !categories[category].includes(entry)) {
+      categories[category].unshift(entry);
+    }
+
+    const newSection = buildUnreleasedSection(categories);
+    const updated = replaceUnreleased(content, newSection);
+    fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
+    console.log('CHANGELOG.md "Não publicado" atualizado com título de PR.');
+    return;
+  }
+
   const tags = getTags();
   const latestTag = tags[0];
   const rawCommits = getCommitsSinceTag(latestTag);
@@ -155,13 +232,13 @@ function updateUnreleased() {
 
   const categories = {};
   commits.forEach(commit => {
-    const category = categorizeCommit(commit.subject);
+    const category = categorizeTitle(commit.subject);
     categories[category] ??= [];
-    categories[category].push(commit);
+    const entry = formatEntry(commit.subject, commit.author);
+    if (entry) categories[category].push(entry);
   });
 
   const newSection = buildUnreleasedSection(categories);
-  const content = loadChangelog();
   const updated = replaceUnreleased(content, newSection);
 
   fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());

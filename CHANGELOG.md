@@ -17,22 +17,27 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 - Atualizar changelog para v1.3 - GitHub Action
 
-### Alterado
+### Estilo
+
+- Sem mudanças
+
+### Refatoração
+
+- Sem mudanças
+
+### Desempenho
+
+- Sem mudanças
+
+### Testes
+
+- Sem mudanças
+
+### Manutenção
 
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
-
-### Descontinuado
-
-- Sem mudanças
-
-### Removido
-
-- Sem mudanças
-
-### Segurança
-
-- Sem mudanças
+- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
 
 ---
 
@@ -91,6 +96,6 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 - Melhorias gerais na geração de changelog - Anderson Kanegae Soares Rocha
 
-### Outros
+### Manutenção
 
 - Commit inicial - Anderson Kanegae Soares Rocha

@@ -42,15 +42,15 @@ function parseCommit(line) {
 
 function categorizeCommit(subject) {
   const s = subject.toLowerCase();
-  if (/^feat(\(.+\))?:/.test(s)) return 'Adicionado';
-  if (/^fix(\(.+\))?:/.test(s)) return 'Corrigido';
-  if (/^docs(\(.+\))?:/.test(s)) return 'Documentação';
-  if (/^perf(\(.+\))?:/.test(s)) return 'Desempenho';
-  if (/^refactor(\(.+\))?:/.test(s)) return 'Refatoração';
-  if (/^style(\(.+\))?:/.test(s)) return 'Estilo';
-  if (/^test(\(.+\))?:/.test(s)) return 'Testes';
-  if (/^chore(\(.+\))?:/.test(s)) return 'Manutenção';
-  return 'Outros';
+  if (/^feat(\(.+\))?!?:/.test(s)) return 'Adicionado';
+  if (/^fix(\(.+\))?!?:/.test(s)) return 'Corrigido';
+  if (/^docs(\(.+\))?!?:/.test(s)) return 'Documentação';
+  if (/^style(\(.+\))?!?:/.test(s)) return 'Estilo';
+  if (/^refactor(\(.+\))?!?:/.test(s)) return 'Refatoração';
+  if (/^perf(\(.+\))?!?:/.test(s)) return 'Desempenho';
+  if (/^test(\(.+\))?!?:/.test(s)) return 'Testes';
+  if (/^(chore|build|ci|revert)(\(.+\))?!?:/.test(s)) return 'Manutenção';
+  return 'Manutenção';
 }
 
 function formatSubject(subject) {
@@ -95,12 +95,11 @@ function generateEntry(version, commits) {
     'Adicionado',
     'Corrigido',
     'Documentação',
-    'Desempenho',
-    'Refatoração',
     'Estilo',
+    'Refatoração',
+    'Desempenho',
     'Testes',
-    'Manutenção',
-    'Outros'
+    'Manutenção'
   ];
 
   order.forEach(category => {
@@ -128,7 +127,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ## [Histórico]
 
-`;
+`;script
 
   if (!tags.length) {
     fs.writeFileSync(changelogPath, content.trimEnd());

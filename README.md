@@ -4,8 +4,9 @@ Prova de conceito para validar o uso de GitHub Actions na geração automática 
 
 ## Objetivo
 
-Validar um workflow que mantenha o `CHANGELOG.md` atualizado a partir do histórico Git, com uma
-seção `"Não publicado"` em merges e promoção para versão em releases na branch definida em `RELEASE_BRANCH`.
+Validar um workflow com GitHub Actions que mantenha o `CHANGELOG.md` atualizado a partir dos títulos de PRs,
+e mantém a seção `"Não publicado"` em merges, promovendo para versão em releases na branch definida
+em `RELEASE_BRANCH`.
 
 ## Como funciona
 
@@ -18,8 +19,7 @@ seção `"Não publicado"` em merges e promoção para versão em releases na br
 
 1. **Workflow de "Não publicado"** (`.github/workflows/unreleased.yml`)
    - Dispara em PR fechado na branch `development` (apenas quando o PR é mergeado)
-   - Ignora PRs de forks (somente `github.repository`)
-   - Atualiza apenas a seção `"Não publicado"`
+   - Atualiza a seção `"Não publicado"` usando o título do PR
    - Faz commit e push das mudanças automaticamente
 
 2. **Workflow de Release** (`.github/workflows/changelog.yml`)
@@ -29,7 +29,7 @@ seção `"Não publicado"` em merges e promoção para versão em releases na br
    - Faz commit e push das mudanças automaticamente
 
 3. **Scripts de changelog**
-   - `scripts/update-unreleased.js`: atualiza a seção `"Não publicado"`
+   - `scripts/update-unreleased.js`: atualiza a seção `"Não publicado"` usando título do PR
    - `scripts/promote-release.js`: promove `"Não publicado"` para versão
    - `scripts/generate-changelog.js`: gera o changelog completo (uso manual)
 
@@ -51,6 +51,8 @@ npm install
 npm run changelog:unreleased
 ```
 
+Observação: localmente, quando não há dados de PR, é utilizado o histórico Git.
+
 ### Gerar release localmente (opcional)
 
 ```bash
@@ -71,7 +73,7 @@ npm run test
 
 ## Uso via GitHub Actions
 
-1. Merge em `development` atualiza `"Não publicado"` automaticamente.
+1. Merge em `development` atualiza `"Não publicado"` com o título do PR automaticamente.
 
 2. Publique um release no GitHub:
    - Acesse a página de releases do repositório
@@ -82,9 +84,9 @@ npm run test
 
 3. O workflow promove `"Não publicado"` para a nova versão e faz commit/push.
 
-## Convenção de commits
+## Convenção de títulos
 
-O script reconhece e categoriza commits usando Conventional Commits:
+Para a categorização funcionar, os títulos de PRs devem seguir Conventional Commits:
 
 - `feat:` → Adicionado
 - `fix:` → Corrigido
@@ -112,7 +114,7 @@ docs: atualizar instruções de instalação
 │       └── unreleased.yml         # Workflow de "Não publicado"
 ├── scripts/
 │   ├── generate-changelog.js      # Script de geração de changelog
-│   ├── update-unreleased.js       # Atualiza a seção "Não publicado"
+│   ├── update-unreleased.js       # Atualiza a seção "Não publicado" com título do PR
 │   ├── promote-release.js         # Promove "Não publicado" para release
 │   └── test-changelog.js          # Script de testes
 ├── CHANGELOG.md                   # Arquivo de changelog
@@ -123,6 +125,6 @@ docs: atualizar instruções de instalação
 ## Mais informações
 
 - [Conventional Commits](https://www.conventionalcommits.org/pt-br/v1.0.0/)
-- [Semantic Versioning](https://semver.org/lang/pt-BR/)
 - [Keep a Changelog](https://keepachangelog.com/pt-BR/)
 - [GitHub Actions](https://docs.github.com/pt/actions)
+- [Semantic Versioning](https://semver.org/lang/pt-BR/)

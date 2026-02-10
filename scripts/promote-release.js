@@ -8,13 +8,13 @@ const CATEGORY_ORDER = [
   'Adicionado',
   'Corrigido',
   'Documentação',
-  'Alterado',
-  'Descontinuado',
-  'Removido',
-  'Segurança'
+  'Estilo',
+  'Refatoração',
+  'Desempenho',
+  'Testes',
+  'Manutenção'
 ];
 const HISTORY_HEADING = '## [Histórico]';
-const LEGACY_HISTORY_HEADING = '## Lançamentos';
 
 function getArgValue(flag) {
   const idx = process.argv.indexOf(flag);
@@ -55,7 +55,7 @@ function parseUnreleased(body) {
   lines.forEach(line => {
     const heading = line.match(/^###\s+(.*)$/);
     if (heading) {
-      current = heading[1];
+      current = heading[1].trim();
       categories[current] ??= [];
       return;
     }
@@ -140,9 +140,6 @@ function promoteRelease() {
 
 function ensureHistoryHeading(content) {
   if (content.includes(HISTORY_HEADING)) return content;
-  if (content.includes(LEGACY_HISTORY_HEADING)) {
-    return content.replace(LEGACY_HISTORY_HEADING, HISTORY_HEADING);
-  }
   return content.replace(/---\n\n/, `---\n\n${HISTORY_HEADING}\n\n`);
 }
 
