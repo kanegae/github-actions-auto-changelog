@@ -85,6 +85,50 @@ npm run test
 
 3. O workflow promove `"Não publicado"` para a nova versão e faz commit/push.
 
+## Uso em outros repositórios (reusable workflow)
+
+Crie os workflows no repositório consumidor apontando para este projeto:
+
+```yaml
+# .github/workflows/unreleased.yml
+name: Update Unreleased Changelog
+
+on:
+  pull_request:
+    branches: [development]
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  changelog:
+    uses: org/github-actions-auto-changelog/.github/workflows/reusable-unreleased.yml@v1
+    with:
+      unreleased_branch: development
+```
+
+```yaml
+# .github/workflows/release.yml
+name: Generate Changelog
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  changelog:
+    uses: org/github-actions-auto-changelog/.github/workflows/reusable-release.yml@v1
+    with:
+      release_branch: master
+```
+
+Observação: se o checkout do repositório do workflow falhar por permissões, passe `workflow_token`
+com acesso ao repositório deste workflow.
+
 ## Convenção de títulos
 
 Para a categorização funcionar, os títulos de PRs devem seguir Conventional Commits:
@@ -115,7 +159,9 @@ docs: atualizar instruções de instalação
 ├── .github/
 │   └── workflows/
 │       ├── changelog.yml          # Workflow de release
-│       └── unreleased.yml         # Workflow de "Não publicado"
+│       ├── unreleased.yml         # Workflow de "Não publicado"
+│       ├── reusable-release.yml   # Workflow reutilizável de release
+│       └── reusable-unreleased.yml # Workflow reutilizável de "Não publicado"
 ├── scripts/
 │   ├── generate-changelog.js      # Script de geração de changelog
 │   ├── update-unreleased.js       # Atualiza a seção "Não publicado" com título do PR

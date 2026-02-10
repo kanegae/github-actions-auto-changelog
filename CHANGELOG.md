@@ -15,6 +15,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Documentação
 
+- Correção ortográfica - Anderson Kanegae Soares Rocha
 - Atualizar changelog para v1.3 - GitHub Action
 
 ### Estilo
@@ -35,6 +36,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Manutenção
 
+- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha

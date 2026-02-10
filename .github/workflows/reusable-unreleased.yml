@@ -1,0 +1,76 @@
+name: Update Unreleased Changelog (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      unreleased_branch:
+        description: Branch que recebe a seção "Não publicado"
+        required: true
+        type: string
+      node_version:
+        description: Versão do Node.js para executar os scripts
+        required: false
+        type: string
+        default: "18"
+    secrets:
+      workflow_token:
+        description: Token opcional para checkout do repositório do workflow
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  changelog_unreleased:
+    if: github.actor != 'github-actions[bot]' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve workflow repository
+        id: workflow_source
+        run: |
+          ref="${{ github.workflow_ref }}"
+          if [ -z "$ref" ]; then
+            echo "workflow_ref not available." >&2
+            exit 1
+          fi
+          repo="${ref%%/.github/workflows/*}"
+          ref="${ref##*@}"
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout caller repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.unreleased_branch }}
+
+      - name: Checkout workflow repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.workflow_source.outputs.repo }}
+          ref: ${{ steps.workflow_source.outputs.ref }}
+          path: .changelog-workflow
+          token: ${{ secrets.workflow_token || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+
+      - name: Generate unreleased changelog
+        run: node .changelog-workflow/scripts/update-unreleased.js
+
+      - name: Commit and push changelog
+        run: |
+          BRANCH="${{ inputs.unreleased_branch }}"
+
+          git checkout "$BRANCH"
+          git pull origin "$BRANCH"
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git add CHANGELOG.md
+          git commit -m 'docs: Atualização da seção "Não publicado" do changelog' || echo "Sem mudanças"
+          git push origin "$BRANCH"
