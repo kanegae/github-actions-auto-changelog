@@ -37,6 +37,12 @@ jobs:
           TAG="${{ github.event.release.tag_name }}"
           TARGET_COMMITISH="${{ github.event.release.target_commitish }}"
 
+          if ! git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" > /dev/null; then
+            echo "Branch $RELEASE_BRANCH não existe no remoto. Pulando."
+            echo "SKIP_CHANGELOG=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
           git fetch origin "$RELEASE_BRANCH" --tags
 
           TAG_COMMIT="$(git rev-list -n 1 "refs/tags/$TAG")"
