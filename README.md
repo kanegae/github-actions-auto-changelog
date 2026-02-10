@@ -103,9 +103,11 @@ permissions:
 
 jobs:
   changelog:
-    uses: org/github-actions-auto-changelog/.github/workflows/reusable-unreleased.yml@v1
+    uses: kanegae/github-actions-auto-changelog/.github/workflows/reusable-unreleased.yml@v1
     with:
       unreleased_branch: development
+      workflow_repository: kanegae/github-actions-auto-changelog
+      workflow_ref: v1
 ```
 
 ```yaml
@@ -121,9 +123,11 @@ permissions:
 
 jobs:
   changelog:
-    uses: org/github-actions-auto-changelog/.github/workflows/reusable-release.yml@v1
+    uses: kanegae/github-actions-auto-changelog/.github/workflows/reusable-release.yml@v1
     with:
       release_branch: master
+      workflow_repository: org/github-actions-auto-changelog
+      workflow_ref: v1
 ```
 
 Observação: se o checkout do repositório do workflow falhar por permissões, passe `workflow_token`
@@ -158,18 +162,18 @@ docs: atualizar instruções de instalação
 .
 ├── .github/
 │   └── workflows/
-│       ├── changelog.yml          # Workflow de release
-│       ├── unreleased.yml         # Workflow de "Não publicado"
-│       ├── reusable-release.yml   # Workflow reutilizável de release
+│       ├── changelog.yml           # Workflow de release
+│       ├── unreleased.yml          # Workflow de "Não publicado"
+│       ├── reusable-release.yml    # Workflow reutilizável de release
 │       └── reusable-unreleased.yml # Workflow reutilizável de "Não publicado"
 ├── scripts/
-│   ├── generate-changelog.js      # Script de geração de changelog
-│   ├── update-unreleased.js       # Atualiza a seção "Não publicado" com título do PR
-│   ├── promote-release.js         # Promove "Não publicado" para release
-│   └── test-changelog.js          # Script de testes
-├── CHANGELOG.md                   # Arquivo de changelog
-├── package.json                   # Configuração Node.js
-└── README.md                      # Este arquivo
+│   ├── generate-changelog.js       # Script de geração de changelog
+│   ├── update-unreleased.js        # Atualiza a seção "Não publicado" com título do PR
+│   ├── promote-release.js          # Promove "Não publicado" para release
+│   └── test-changelog.js           # Script de testes
+├── CHANGELOG.md                    # Arquivo de changelog
+├── package.json                    # Configuração Node.js
+└── README.md                       # Este arquivo
 ```
 
 ## Mais informações

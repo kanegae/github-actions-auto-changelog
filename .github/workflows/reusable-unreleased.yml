@@ -7,6 +7,14 @@ on:
         description: Branch que recebe a seção "Não publicado"
         required: true
         type: string
+      workflow_repository:
+        description: Repositório que contém os scripts do changelog
+        required: true
+        type: string
+      workflow_ref:
+        description: Ref (branch/tag/sha) do repositório do workflow
+        required: true
+        type: string
       node_version:
         description: Versão do Node.js para executar os scripts
         required: false
@@ -26,19 +34,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Resolve workflow repository
-        id: workflow_source
-        run: |
-          ref="${{ github.workflow_ref }}"
-          if [ -z "$ref" ]; then
-            echo "workflow_ref not available." >&2
-            exit 1
-          fi
-          repo="${ref%%/.github/workflows/*}"
-          ref="${ref##*@}"
-          echo "repo=$repo" >> "$GITHUB_OUTPUT"
-          echo "ref=$ref" >> "$GITHUB_OUTPUT"
-
       - name: Checkout caller repository
         uses: actions/checkout@v4
         with:
@@ -48,8 +43,8 @@ jobs:
       - name: Checkout workflow repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ steps.workflow_source.outputs.repo }}
-          ref: ${{ steps.workflow_source.outputs.ref }}
+          repository: ${{ inputs.workflow_repository }}
+          ref: ${{ inputs.workflow_ref }}
           path: .changelog-workflow
           token: ${{ secrets.workflow_token || secrets.GITHUB_TOKEN }}
 
