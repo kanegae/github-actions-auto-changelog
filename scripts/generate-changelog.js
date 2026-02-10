@@ -8,6 +8,8 @@ function run(cmd) {
   return execSync(cmd, { encoding: 'utf-8' }).trim();
 }
 
+const FIELD_SEPARATOR = '\x1f';
+
 function getTags() {
   try {
     const output = run('git tag --sort=-creatordate');
@@ -17,9 +19,21 @@ function getTags() {
   }
 }
 
+function getTagDate(tag) {
+  try {
+    const output = run(
+      `git for-each-ref --format="%(creatordate:short)" "refs/tags/${tag}"`
+    );
+    const date = output.split('\n').filter(Boolean)[0];
+    return date || null;
+  } catch {
+    return null;
+  }
+}
+
 function getCommitsUntilTag(tag) {
   try {
-    const cmd = `git log ${tag} --pretty=format:"%h|%s|%an|%ae|%ad" --date=short`;
+    const cmd = `git log ${tag} --pretty=format:"%h%x1f%s%x1f%an%x1f%ae%x1f%ad" --date=short`;
     return run(cmd).split('\n').filter(Boolean);
   } catch {
     return [];
@@ -28,7 +42,7 @@ function getCommitsUntilTag(tag) {
 
 function getCommitsBetweenTags(fromTag, toTag) {
   try {
-    const cmd = `git log ${fromTag}..${toTag} --pretty=format:"%h|%s|%an|%ae|%ad" --date=short`;
+    const cmd = `git log ${fromTag}..${toTag} --pretty=format:"%h%x1f%s%x1f%an%x1f%ae%x1f%ad" --date=short`;
     return run(cmd).split('\n').filter(Boolean);
   } catch {
     return [];
@@ -36,7 +50,7 @@ function getCommitsBetweenTags(fromTag, toTag) {
 }
 
 function parseCommit(line) {
-  const [hash, subject, author, email, date] = line.split('|');
+  const [hash, subject, author, email, date] = line.split(FIELD_SEPARATOR);
   return { hash, subject, author, email, date };
 }
 
@@ -77,11 +91,11 @@ function formatDate(date) {
   return new Date(date).toISOString().slice(0, 10);
 }
 
-function generateEntry(version, commits) {
+function generateEntry(version, commits, releaseDate) {
   if (!commits.length) return '';
 
-  const date = commits[0].date;
-  let entry = `## [${version}] - ${formatDate(date)}\n\n`;
+  const date = releaseDate || formatDate(commits[0].date);
+  let entry = `## [${version}] - ${date}\n\n`;
 
   const categories = {};
 
@@ -127,7 +141,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ## [Histórico]
 
-`;script
+`;
 
   if (!tags.length) {
     fs.writeFileSync(changelogPath, content.trimEnd());
@@ -149,7 +163,8 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
       : getCommitsUntilTag(current);
 
     const commits = rawCommits.map(parseCommit);
-    const entry = generateEntry(current.replace(/^v/, ''), commits);
+    const releaseDate = getTagDate(current);
+    const entry = generateEntry(current.replace(/^v/, ''), commits, releaseDate);
 
     content += entry;
   }

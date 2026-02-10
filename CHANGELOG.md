@@ -38,6 +38,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
+- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
 
 ---
 

@@ -5,26 +5,27 @@ Prova de conceito para validar o uso de GitHub Actions na geração automática 
 ## Objetivo
 
 Validar um workflow com GitHub Actions que mantenha o `CHANGELOG.md` atualizado a partir dos títulos de PRs,
-e mantém a seção `"Não publicado"` em merges, promovendo para versão em releases na branch definida
-em `RELEASE_BRANCH`.
+mantendo a seção `"Não publicado"` em merges na branch definida em `UNRELEASED_BRANCH` (ex.: `development`)
+e promovendo para versão em releases na branch definida em `RELEASE_BRANCH` (ex.: `master`).
 
 ## Como funciona
 
 ### Configuração
 
-- `RELEASE_BRANCH` em `/.github/workflows/changelog.yml`: branch usada para validar releases e receber o commit do changelog.
-- `UNRELEASED_BRANCH` em `/.github/workflows/unreleased.yml`: branch alvo do "Não publicado" e do commit automatizado.
+- `RELEASE_BRANCH` em `/.github/workflows/changelog.yml`: branch usada para validar releases e receber o commit do changelog (ex.: `master`).
+- `UNRELEASED_BRANCH` em `/.github/workflows/unreleased.yml`: branch alvo do "Não publicado" e do commit automatizado (ex.: `development`).
 
 ### Componentes principais
 
 1. **Workflow de "Não publicado"** (`.github/workflows/unreleased.yml`)
-   - Dispara em PR fechado na branch `development` (apenas quando o PR é mergeado)
+   - Dispara em PR fechado na branch definida em `UNRELEASED_BRANCH` (ex.: `development`, apenas quando o PR é mergeado)
+   - Ignora PRs de forks (usa apenas o repositório principal)
    - Atualiza a seção `"Não publicado"` usando o título do PR
    - Faz commit e push das mudanças automaticamente
 
 2. **Workflow de Release** (`.github/workflows/changelog.yml`)
    - Dispara quando um release é publicado
-   - Valida se o release foi feito a partir da branch definida em `RELEASE_BRANCH`
+   - Valida se o release foi feito a partir da branch definida em `RELEASE_BRANCH` (ex.: `master`)
    - Promove o conteúdo de `"Não publicado"` para uma versão com data
    - Faz commit e push das mudanças automaticamente
 
@@ -73,13 +74,13 @@ npm run test
 
 ## Uso via GitHub Actions
 
-1. Merge em `development` atualiza `"Não publicado"` com o título do PR automaticamente.
+1. Merge na branch definida em `UNRELEASED_BRANCH` (ex.: `development`) atualiza `"Não publicado"` com o título do PR automaticamente.
 
 2. Publique um release no GitHub:
    - Acesse a página de releases do repositório
    - Clique em "Create a new release"
    - Selecione ou crie uma tag
-   - Escolha a branch definida em `RELEASE_BRANCH` como base do release
+   - Escolha a branch definida em `RELEASE_BRANCH` como base do release (ex.: `master`)
    - Publique o release
 
 3. O workflow promove `"Não publicado"` para a nova versão e faz commit/push.
@@ -96,12 +97,15 @@ Para a categorização funcionar, os títulos de PRs devem seguir Conventional C
 - `perf:` → Desempenho
 - `test:` → Testes
 - `chore:` → Manutenção
+- `build:` → Manutenção
+- `ci:` → Manutenção
+- `revert:` → Manutenção
 
 Exemplos:
 ```
 feat(auth): adicionar suporte a OAuth2
 fix(api): corrigir erro de validação
-docs: atualizar instruções de instalação
+docs: atualizar instruções de instalaçã
 ```
 
 ## Estrutura de arquivos

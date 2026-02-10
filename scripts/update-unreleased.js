@@ -34,10 +34,12 @@ function getTags() {
   }
 }
 
+const FIELD_SEPARATOR = '\x1f';
+
 function getCommitsSinceTag(tag) {
   try {
     const range = tag ? `${tag}..HEAD` : 'HEAD';
-    const cmd = `git log ${range} --pretty=format:"%h|%s|%an|%ae|%ad" --date=short`;
+    const cmd = `git log ${range} --pretty=format:"%h%x1f%s%x1f%an%x1f%ae%x1f%ad" --date=short`;
     return run(cmd).split('\n').filter(Boolean);
   } catch {
     return [];
@@ -45,10 +47,9 @@ function getCommitsSinceTag(tag) {
 }
 
 function parseCommit(line) {
-  const [hash, subject, author, email, date] = line.split('|');
+  const [hash, subject, author, email, date] = line.split(FIELD_SEPARATOR);
   return { hash, subject, author, email, date };
 }
-
 
 function categorizeTitle(subject) {
   const s = subject.toLowerCase();
@@ -221,7 +222,7 @@ function updateUnreleased() {
     const newSection = buildUnreleasedSection(categories);
     const updated = replaceUnreleased(content, newSection);
     fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
-    console.log('CHANGELOG.md "Não publicado" atualizado com título de PR.');
+    console.log('Seção "Não publicado" do changelog foi atualizada com título do PR.');
     return;
   }
 
@@ -242,7 +243,7 @@ function updateUnreleased() {
   const updated = replaceUnreleased(content, newSection);
 
   fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
-  console.log('CHANGELOG.md "Não publicado" atualizado com sucesso.');
+  console.log('Seção "Não publicado" do changelog foi atualizada com sucesso.');
 }
 
 updateUnreleased();
