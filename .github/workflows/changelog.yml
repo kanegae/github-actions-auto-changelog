@@ -38,7 +38,7 @@ jobs:
           TARGET_COMMITISH="${{ github.event.release.target_commitish }}"
 
           if ! git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" > /dev/null; then
-            echo "Branch $RELEASE_BRANCH não existe no remoto. Pulando."
+            echo "Branch $RELEASE_BRANCH não existe no remoto."
             echo "SKIP_CHANGELOG=true" >> $GITHUB_ENV
             exit 0
           fi
