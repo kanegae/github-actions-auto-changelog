@@ -4,11 +4,13 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
 
+const FIELD_SEPARATOR = '\x1f';
+const HISTORY_HEADING = '## [Histórico]';
+const HISTORY_PLACEHOLDER = 'Sem versões publicadas\n\n';
+
 function run(cmd) {
   return execSync(cmd, { encoding: 'utf-8' }).trim();
 }
-
-const FIELD_SEPARATOR = '\x1f';
 
 function getTags() {
   try {
@@ -139,12 +141,12 @@ function generateChangelog() {
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
-## [Histórico]
+${HISTORY_HEADING}
 
 `;
 
   if (!tags.length) {
-    fs.writeFileSync(changelogPath, content.trimEnd());
+    fs.writeFileSync(changelogPath, (content + HISTORY_PLACEHOLDER).trimEnd());
     console.log('Nenhuma tag encontrada. Changelog base criado.');
     return;
   }

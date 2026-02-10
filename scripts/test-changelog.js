@@ -64,6 +64,8 @@ const results = [];
 results.push(runTest('Estrutura básica do projeto', () => {
   testFileExists('.github/workflows/changelog.yml');
   testFileExists('.github/workflows/unreleased.yml');
+  testFileExists('.github/workflows/reusable-release.yml');
+  testFileExists('.github/workflows/reusable-unreleased.yml');
   testFileExists('scripts/generate-changelog.js');
   testFileExists('scripts/update-unreleased.js');
   testFileExists('scripts/promote-release.js');
@@ -86,6 +88,14 @@ results.push(runTest('Workflow GitHub Actions válido', () => {
   testFileContains('.github/workflows/unreleased.yml', 'development');
   testFileContains('.github/workflows/unreleased.yml', 'npm run changelog:unreleased');
   testFileContains('.github/workflows/unreleased.yml', 'UNRELEASED_BRANCH');
+  testFileContains('.github/workflows/reusable-unreleased.yml', 'workflow_call');
+  testFileContains('.github/workflows/reusable-unreleased.yml', 'workflow_repository');
+  testFileContains('.github/workflows/reusable-unreleased.yml', 'workflow_ref');
+  testFileContains('.github/workflows/reusable-unreleased.yml', 'update-unreleased.js');
+  testFileContains('.github/workflows/reusable-release.yml', 'workflow_call');
+  testFileContains('.github/workflows/reusable-release.yml', 'workflow_repository');
+  testFileContains('.github/workflows/reusable-release.yml', 'workflow_ref');
+  testFileContains('.github/workflows/reusable-release.yml', 'promote-release.js');
 }));
 
 /* =======================================================

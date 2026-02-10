@@ -21,6 +21,17 @@ const DEFAULT_HEADER =
   'Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.\n' +
   'O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).\n\n';
 
+const FIELD_SEPARATOR = '\x1f';
+const HISTORY_HEADING = '## [Histórico]';
+const HISTORY_PLACEHOLDER = 'Sem versões publicadas\n\n';
+const NO_CHANGES_LABEL = 'Sem mudanças';
+const UNRELEASED_HEADING = '## [Não publicado]';
+const INTRO_SECTION_REGEX = /# Changelog[\s\S]*?O formato.*\n\n/;
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function run(cmd) {
   return execSync(cmd, { encoding: 'utf-8' }).trim();
 }
@@ -33,8 +44,6 @@ function getTags() {
     return [];
   }
 }
-
-const FIELD_SEPARATOR = '\x1f';
 
 function getCommitsSinceTag(tag) {
   try {
@@ -68,7 +77,7 @@ function formatSubject(subject) {
   const cleaned = subject.replace(/^[a-z]+(\([^)]+\))?!?:\s*/i, '');
   const updateRelease = cleaned.match(/^update changelog for (.+)$/i);
   if (updateRelease) {
-    return normalizeRefs(`Atualizar changelog para ${updateRelease[1]}`);
+    return normalizeRefs(`Atualização do changelog para ${updateRelease[1]}`);
   }
   if (/^update unreleased changelog$/i.test(cleaned)) {
     return normalizeRefs('Atualização da seção "Não publicado" do changelog');
@@ -92,7 +101,7 @@ function formatEntry(subject, author) {
 }
 
 function buildUnreleasedSection(categories) {
-  let section = '## [Não publicado]\n\n';
+  let section = `${UNRELEASED_HEADING}\n\n`;
 
   CATEGORY_ORDER.forEach(category => {
     section += `### ${category}\n\n`;
@@ -103,7 +112,7 @@ function buildUnreleasedSection(categories) {
         section += `- ${item}\n`;
       });
     } else {
-      section += '- Sem mudanças\n';
+      section += `- ${NO_CHANGES_LABEL}\n`;
     }
 
     section += '\n';
@@ -121,8 +130,6 @@ function loadChangelog() {
   const content = fs.readFileSync(CHANGELOG_PATH, 'utf-8');
   return content.trim() ? content : DEFAULT_HEADER + buildUnreleasedSection({});
 }
-
-const HISTORY_HEADING = '## [Histórico]';
 
 function parseUnreleasedSection(body) {
   const lines = body.split('\n');
@@ -144,7 +151,7 @@ function parseUnreleasedSection(body) {
 
     const text = item[1].trim();
     if (!text) return;
-    if (text === 'Sem mudanças') return;
+    if (text === NO_CHANGES_LABEL) return;
 
     categories[current].push(text);
   });
@@ -174,15 +181,18 @@ function getPullRequestInfo() {
 }
 
 function getUnreleasedCategories(content) {
-  const match = content.match(/## \[Não publicado\]\n([\s\S]*?)\n---/);
+  const unreleasedRegex = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}\\n([\\s\\S]*?)\\n---`
+  );
+  const match = content.match(unreleasedRegex);
   if (!match) return {};
   return parseUnreleasedSection(match[1]);
 }
 
 function insertUnreleasedIfMissing(content, section) {
-  if (content.includes('## [Não publicado]')) return content;
+  if (content.includes(UNRELEASED_HEADING)) return content;
 
-  const introMatch = content.match(/# Changelog[\s\S]*?O formato.*\n\n/);
+  const introMatch = content.match(INTRO_SECTION_REGEX);
   const baseContent = introMatch
     ? content.slice(0, introMatch[0].length) + section + content.slice(introMatch[0].length)
     : section + content;
@@ -191,7 +201,10 @@ function insertUnreleasedIfMissing(content, section) {
 }
 
 function replaceUnreleased(content, section) {
-  const unreleasedRegex = /## \[Não publicado\][\s\S]*?^---\s*$\n*/m;
+  const unreleasedRegex = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?^---\\s*$\\n*`,
+    'm'
+  );
   if (unreleasedRegex.test(content)) {
     const withHistory = ensureHistoryHeading(content);
     return withHistory.replace(unreleasedRegex, section.trimEnd() + '\n\n');
@@ -201,8 +214,27 @@ function replaceUnreleased(content, section) {
 }
 
 function ensureHistoryHeading(content) {
-  if (content.includes(HISTORY_HEADING)) return content;
-  return content.replace(/---\n\n/, `---\n\n${HISTORY_HEADING}\n\n`);
+  let updated = content;
+  if (!updated.includes(HISTORY_HEADING)) {
+    updated = updated.replace(/---\n\n/, `---\n\n${HISTORY_HEADING}\n\n`);
+  }
+  return ensureHistoryPlaceholder(updated);
+}
+
+function ensureHistoryPlaceholder(content) {
+  const historyHeading = `${HISTORY_HEADING}\n\n`;
+  const historyIndex = content.indexOf(historyHeading);
+  if (historyIndex === -1) return content;
+
+  const body = content.slice(historyIndex + historyHeading.length).trim();
+  if (!body) {
+    return content.replace(
+      historyHeading,
+      `${historyHeading}${HISTORY_PLACEHOLDER}`
+    );
+  }
+  if (body === HISTORY_PLACEHOLDER.trim()) return content;
+  return content;
 }
 
 function updateUnreleased() {

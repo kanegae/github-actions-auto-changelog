@@ -15,6 +15,18 @@ const CATEGORY_ORDER = [
   'Manutenção'
 ];
 const HISTORY_HEADING = '## [Histórico]';
+const HISTORY_PLACEHOLDER = 'Sem versões publicadas\n\n';
+const UNRELEASED_HEADING = '## [Não publicado]';
+const NO_CHANGES_LABEL = 'Sem mudanças';
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function removeHistoryPlaceholder(content) {
+  const placeholder = `${HISTORY_HEADING}\n\n${HISTORY_PLACEHOLDER}`;
+  return content.replace(placeholder, `${HISTORY_HEADING}\n\n`);
+}
 
 function getArgValue(flag) {
   const idx = process.argv.indexOf(flag);
@@ -36,11 +48,11 @@ function getDate() {
 }
 
 function buildUnreleasedSection() {
-  let section = '## [Não publicado]\n\n';
+  let section = `${UNRELEASED_HEADING}\n\n`;
 
   CATEGORY_ORDER.forEach(category => {
     section += `### ${category}\n\n`;
-    section += '- Sem mudanças\n\n';
+    section += `- ${NO_CHANGES_LABEL}\n\n`;
   });
 
   section += '---\n\n';
@@ -67,7 +79,7 @@ function parseUnreleased(body) {
 
     const text = item[1].trim();
     if (!text) return;
-    if (text === 'Sem mudanças') return;
+    if (text === NO_CHANGES_LABEL) return;
 
     categories[current].push(text);
   });
@@ -108,7 +120,10 @@ function promoteRelease() {
   const date = getDate();
   const content = fs.readFileSync(CHANGELOG_PATH, 'utf-8');
 
-  const match = content.match(/## \[Não publicado\]\n([\s\S]*?)\n---/);
+  const unreleasedRegex = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}\\n([\\s\\S]*?)\\n---`
+  );
+  const match = content.match(unreleasedRegex);
   if (!match) {
     console.error('Sessão "Não publicado" não encontrada no CHANGELOG.md.');
     process.exit(1);
@@ -124,14 +139,19 @@ function promoteRelease() {
 
   const newUnreleased = buildUnreleasedSection();
   const withHistory = ensureHistoryHeading(content);
-  let updated = withHistory.replace(
-    /## \[Não publicado\][\s\S]*?^---\s*$\n*/m,
+  const sanitizedHistory = removeHistoryPlaceholder(withHistory);
+  const unreleasedSectionRegex = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?^---\\s*$\\n*`,
+    'm'
+  );
+  let updated = sanitizedHistory.replace(
+    unreleasedSectionRegex,
     newUnreleased.trimEnd() + '\n\n'
   );
 
   updated = updated.replace(
-    /## \[Histórico\]\n\n/,
-    `## [Histórico]\n\n${releaseSection}\n`
+    `${HISTORY_HEADING}\n\n`,
+    `${HISTORY_HEADING}\n\n${releaseSection}\n`
   );
 
   fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());

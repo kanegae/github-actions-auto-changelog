@@ -7,11 +7,13 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Adicionado
 
-- Sem mudanças
+- Implementação de reusable workflow - Anderson Kanegae Soares Rocha
 
 ### Corrigido
 
-- Sem mudanças
+- Correção das referências dos reusable workflows - Anderson Kanegae Soares Rocha
+- Correção para workflow não quebrar quando release branch não existir - Anderson Kanegae Soares Rocha
+- Correção para workflow não quebrar quando release branch não existir - Anderson Kanegae Soares Rocha
 
 ### Documentação
 
