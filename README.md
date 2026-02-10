@@ -105,7 +105,7 @@ Exemplos:
 ```
 feat(auth): adicionar suporte a OAuth2
 fix(api): corrigir erro de validação
-docs: atualizar instruções de instalaçã
+docs: atualizar instruções de instalação
 ```
 
 ## Estrutura de arquivos
