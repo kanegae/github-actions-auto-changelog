@@ -1,4 +1,4 @@
-name: Generate Changelog (Reusable)
+name: Generate Changelog on Release (Reusable)
 
 on:
   workflow_call:

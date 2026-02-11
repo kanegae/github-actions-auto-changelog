@@ -1,4 +1,4 @@
-name: Generate Changelog
+name: Generate Changelog on Release
 
 env:
   RELEASE_BRANCH: master
