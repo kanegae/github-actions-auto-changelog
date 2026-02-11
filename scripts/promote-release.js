@@ -125,18 +125,21 @@ function promoteRelease() {
   const categories = parseUnreleased(match[1]);
   const releaseSection = buildReleaseSection(version, date, categories);
 
-  if (!releaseSection) {
-    console.log('Sem entradas em "Não publicado". Nada para promover.');
-    return;
-  }
-
   const withHistory = ensureHistoryHeading(content);
-  const sanitizedHistory = removeHistoryPlaceholder(withHistory);
   const unreleasedSectionRegex = new RegExp(
     `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?^---\\s*$\\r?\\n*`,
     'm'
   );
-  let updated = sanitizedHistory.replace(unreleasedSectionRegex, '');
+  let updated = withHistory.replace(unreleasedSectionRegex, '');
+
+  if (!releaseSection) {
+    fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
+    console.log('Sem entradas em "Não publicado". Seção removida do CHANGELOG.md.');
+    return;
+  }
+
+  const sanitizedHistory = removeHistoryPlaceholder(updated);
+  updated = sanitizedHistory;
 
   const historyInsertRegex = new RegExp(
     `${escapeRegExp(HISTORY_HEADING)}\\r?\\n(?:\\r?\\n)*`
