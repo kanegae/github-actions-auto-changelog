@@ -216,21 +216,27 @@ function replaceUnreleased(content, section) {
 function ensureHistoryHeading(content) {
   let updated = content;
   if (!updated.includes(HISTORY_HEADING)) {
-    updated = updated.replace(/---\n\n/, `---\n\n${HISTORY_HEADING}\n\n`);
+    updated = updated.replace(/---\r?\n\r?\n/, `---\n\n${HISTORY_HEADING}\n\n`);
   }
   return ensureHistoryPlaceholder(updated);
 }
 
 function ensureHistoryPlaceholder(content) {
-  const historyHeading = `${HISTORY_HEADING}\n\n`;
-  const historyIndex = content.indexOf(historyHeading);
-  if (historyIndex === -1) return content;
+  const historyHeadingRegex = new RegExp(
+    `^${escapeRegExp(HISTORY_HEADING)}\\r?\\n(?:\\r?\\n)*`,
+    'm'
+  );
+  const match = content.match(historyHeadingRegex);
+  if (!match) return content;
 
-  const body = content.slice(historyIndex + historyHeading.length).trim();
+  const startIndex = match.index + match[0].length;
+  const body = content.slice(startIndex).trim();
   if (!body) {
-    return content.replace(
-      historyHeading,
-      `${historyHeading}${HISTORY_PLACEHOLDER}`
+    return (
+      content.slice(0, startIndex) +
+      HISTORY_PLACEHOLDER +
+      '\n\n' +
+      content.slice(startIndex)
     );
   }
   if (body === HISTORY_PLACEHOLDER.trim()) return content;

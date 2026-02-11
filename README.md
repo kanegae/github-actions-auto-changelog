@@ -112,7 +112,7 @@ jobs:
 
 ```yaml
 # .github/workflows/release.yml
-name: Generate Changelog
+name: Generate Changelog on Release
 
 on:
   release:

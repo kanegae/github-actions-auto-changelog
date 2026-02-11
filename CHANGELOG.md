@@ -11,6 +11,9 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Corrigido
 
+- Remoção da seção 'Não publicado' em releases sem itens a promover - Anderson Kanegae Soares Rocha
+- Correção para evitar conflito ao trocar de branch - Anderson Kanegae Soares Rocha
+- Correção para não exibir seção 'Não publicado' na release - Anderson Kanegae Soares Rocha
 - Correção do erro de checkout ao atualizar changelog - Anderson Kanegae Soares Rocha
 - Correção e ajustes nos placeholders - Anderson Kanegae Soares Rocha
 - Correção das referências dos reusable workflows - Anderson Kanegae Soares Rocha
@@ -40,6 +43,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Manutenção
 
+- Melhorias gerais - Anderson Kanegae Soares Rocha
 - Ajustes nos scripts, README e testes - Anderson Kanegae Soares Rocha
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
 - Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
