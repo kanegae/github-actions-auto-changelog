@@ -243,6 +243,22 @@ function ensureHistoryPlaceholder(content) {
   return content;
 }
 
+function hasReleaseSections(content) {
+  const releaseHeadingRegex = /^## \[(?!Não publicado\]|Histórico\])[^\]]+\]/m;
+  return releaseHeadingRegex.test(content);
+}
+
+function stripHistoryIfNoReleases(content) {
+  if (!content.includes(HISTORY_HEADING)) return content;
+  if (hasReleaseSections(content)) return content;
+
+  const historyBlockRegex = new RegExp(
+    `\\r?\\n*${escapeRegExp(HISTORY_HEADING)}[\\s\\S]*$`,
+    'm'
+  );
+  return content.replace(historyBlockRegex, '').trimEnd();
+}
+
 function updateUnreleased() {
   const content = loadChangelog();
   const pullRequest = getPullRequestInfo();
@@ -258,7 +274,9 @@ function updateUnreleased() {
     }
 
     const newSection = buildUnreleasedSection(categories);
-    const updated = replaceUnreleased(content, newSection);
+    const updated = stripHistoryIfNoReleases(
+      replaceUnreleased(content, newSection)
+    );
     fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
     console.log('Seção "Não publicado" do changelog foi atualizada com título do PR.');
     return;
@@ -278,7 +296,9 @@ function updateUnreleased() {
   });
 
   const newSection = buildUnreleasedSection(categories);
-  const updated = replaceUnreleased(content, newSection);
+  const updated = stripHistoryIfNoReleases(
+    replaceUnreleased(content, newSection)
+  );
 
   fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
   console.log('Seção "Não publicado" do changelog foi atualizada com sucesso.');
