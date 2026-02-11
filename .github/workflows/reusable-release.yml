@@ -85,6 +85,13 @@ jobs:
           echo "RELEASE_VERSION=${TAG#v}" >> $GITHUB_ENV
           echo "RELEASE_DATE=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
 
+      - name: Checkout target branch
+        if: env.SKIP_CHANGELOG != 'true'
+        run: |
+          echo "Usando branch: $TARGET_BRANCH"
+          git checkout "$TARGET_BRANCH"
+          git pull origin "$TARGET_BRANCH"
+
       - name: Promote unreleased to release
         if: env.SKIP_CHANGELOG != 'true'
         run: node .changelog-workflow/scripts/promote-release.js --version "$RELEASE_VERSION" --date "$RELEASE_DATE"
@@ -92,17 +99,10 @@ jobs:
       - name: Commit and push changelog
         if: env.SKIP_CHANGELOG != 'true'
         run: |
-          echo "Usando branch: $TARGET_BRANCH"
-
           if git diff --quiet -- CHANGELOG.md; then
             echo "Sem mudanças"
             exit 0
           fi
-
-          git stash push -m "changelog-update" -- CHANGELOG.md
-          git checkout "$TARGET_BRANCH"
-          git pull origin "$TARGET_BRANCH"
-          git stash pop
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
