@@ -52,18 +52,6 @@ function getDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function buildUnreleasedSection() {
-  let section = `${UNRELEASED_HEADING}\n\n`;
-
-  CATEGORY_ORDER.forEach(category => {
-    section += `### ${category}\n\n`;
-    section += `- ${NO_CHANGES_LABEL}\n\n`;
-  });
-
-  section += '---\n\n';
-  return section;
-}
-
 function parseUnreleased(body) {
   const lines = body.split('\n');
   const categories = {};
@@ -142,17 +130,13 @@ function promoteRelease() {
     return;
   }
 
-  const newUnreleased = buildUnreleasedSection();
   const withHistory = ensureHistoryHeading(content);
   const sanitizedHistory = removeHistoryPlaceholder(withHistory);
   const unreleasedSectionRegex = new RegExp(
-    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?^---\\s*$\\n*`,
+    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?^---\\s*$\\r?\\n*`,
     'm'
   );
-  let updated = sanitizedHistory.replace(
-    unreleasedSectionRegex,
-    newUnreleased.trimEnd() + '\n\n'
-  );
+  let updated = sanitizedHistory.replace(unreleasedSectionRegex, '');
 
   const historyInsertRegex = new RegExp(
     `${escapeRegExp(HISTORY_HEADING)}\\r?\\n(?:\\r?\\n)*`

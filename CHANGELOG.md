@@ -11,6 +11,8 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Corrigido
 
+- Correção do erro de checkout ao atualizar changelog - Anderson Kanegae Soares Rocha
+- Correção e ajustes nos placeholders - Anderson Kanegae Soares Rocha
 - Correção das referências dos reusable workflows - Anderson Kanegae Soares Rocha
 - Correção para workflow não quebrar quando release branch não existir - Anderson Kanegae Soares Rocha
 - Correção para workflow não quebrar quando release branch não existir - Anderson Kanegae Soares Rocha
