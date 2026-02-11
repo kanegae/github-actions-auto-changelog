@@ -72,14 +72,21 @@ jobs:
         run: |
           echo "Usando branch: $TARGET_BRANCH"
 
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "Sem mudanças"
+            exit 0
+          fi
+
+          git stash push -m "changelog-update" -- CHANGELOG.md
           git checkout "$TARGET_BRANCH"
           git pull origin "$TARGET_BRANCH"
+          git stash pop
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
           git add CHANGELOG.md
-          git commit -m "docs: Atualização do changelog para ${{ github.ref }}" || echo "Sem mudanças"
+          git commit -m "docs: Atualização do changelog para ${{ github.ref }}"
           git push origin "$TARGET_BRANCH"
 
       - name: Update GitHub Release
