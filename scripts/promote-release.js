@@ -15,7 +15,7 @@ const CATEGORY_ORDER = [
   'Manutenção'
 ];
 const HISTORY_HEADING = '## [Histórico]';
-const HISTORY_PLACEHOLDER = 'Sem versões publicadas\n\n';
+const HISTORY_PLACEHOLDER = 'Sem versões publicadas';
 const UNRELEASED_HEADING = '## [Não publicado]';
 const NO_CHANGES_LABEL = 'Sem mudanças';
 
@@ -24,8 +24,13 @@ function escapeRegExp(value) {
 }
 
 function removeHistoryPlaceholder(content) {
-  const placeholder = `${HISTORY_HEADING}\n\n${HISTORY_PLACEHOLDER}`;
-  return content.replace(placeholder, `${HISTORY_HEADING}\n\n`);
+  const placeholderRegex = new RegExp(
+    `^${escapeRegExp(HISTORY_HEADING)}\\r?\\n(?:\\r?\\n)*${escapeRegExp(
+      HISTORY_PLACEHOLDER
+    )}(?:\\r?\\n)*`,
+    'm'
+  );
+  return content.replace(placeholderRegex, `${HISTORY_HEADING}\n\n`);
 }
 
 function getArgValue(flag) {
@@ -149,10 +154,20 @@ function promoteRelease() {
     newUnreleased.trimEnd() + '\n\n'
   );
 
-  updated = updated.replace(
-    `${HISTORY_HEADING}\n\n`,
-    `${HISTORY_HEADING}\n\n${releaseSection}\n`
+  const historyInsertRegex = new RegExp(
+    `${escapeRegExp(HISTORY_HEADING)}\\r?\\n(?:\\r?\\n)*`
   );
+  if (historyInsertRegex.test(updated)) {
+    updated = updated.replace(
+      historyInsertRegex,
+      `${HISTORY_HEADING}\n\n${releaseSection}\n`
+    );
+  } else {
+    updated = updated.replace(
+      HISTORY_HEADING,
+      `${HISTORY_HEADING}\n\n${releaseSection}\n`
+    );
+  }
 
   fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
   console.log(`Release ${version} promovida no CHANGELOG.md`);
@@ -160,7 +175,7 @@ function promoteRelease() {
 
 function ensureHistoryHeading(content) {
   if (content.includes(HISTORY_HEADING)) return content;
-  return content.replace(/---\n\n/, `---\n\n${HISTORY_HEADING}\n\n`);
+  return content.replace(/---\r?\n\r?\n/, `---\n\n${HISTORY_HEADING}\n\n`);
 }
 
 promoteRelease();

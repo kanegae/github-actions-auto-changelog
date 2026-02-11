@@ -23,7 +23,7 @@ const DEFAULT_HEADER =
 
 const FIELD_SEPARATOR = '\x1f';
 const HISTORY_HEADING = '## [Histórico]';
-const HISTORY_PLACEHOLDER = 'Sem versões publicadas\n\n';
+const HISTORY_PLACEHOLDER = 'Sem versões publicadas';
 const NO_CHANGES_LABEL = 'Sem mudanças';
 const UNRELEASED_HEADING = '## [Não publicado]';
 const INTRO_SECTION_REGEX = /# Changelog[\s\S]*?O formato.*\n\n/;
