@@ -100,7 +100,8 @@ function formatEntry(subject, author) {
   return title;
 }
 
-function buildUnreleasedSection(categories) {
+function buildUnreleasedSection(categories, options = {}) {
+  const includeSeparator = options.includeSeparator ?? true;
   let section = `${UNRELEASED_HEADING}\n\n`;
 
   CATEGORY_ORDER.forEach(category => {
@@ -118,7 +119,9 @@ function buildUnreleasedSection(categories) {
     section += '\n';
   });
 
-  section += '---\n\n';
+  if (includeSeparator) {
+    section += '---\n\n';
+  }
   return section;
 }
 
@@ -159,6 +162,30 @@ function parseUnreleasedSection(body) {
   return categories;
 }
 
+function getUnreleasedBody(content) {
+  const withSeparator = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}\\r?\\n([\\s\\S]*?)\\r?\\n---\\s*(?:\\r?\\n|$)`
+  );
+  const matchSeparator = content.match(withSeparator);
+  if (matchSeparator) return matchSeparator[1];
+
+  const beforeHistory = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}\\r?\\n([\\s\\S]*?)(?=\\r?\\n${escapeRegExp(
+      HISTORY_HEADING
+    )})`
+  );
+  const matchHistory = content.match(beforeHistory);
+  if (matchHistory) return matchHistory[1];
+
+  const toEnd = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}\\r?\\n([\\s\\S]*)$`
+  );
+  const matchEnd = content.match(toEnd);
+  if (matchEnd) return matchEnd[1];
+
+  return null;
+}
+
 function getPullRequestInfo() {
   const eventPath = process.env.GITHUB_EVENT_PATH;
   if (!eventPath || !fs.existsSync(eventPath)) return null;
@@ -181,12 +208,9 @@ function getPullRequestInfo() {
 }
 
 function getUnreleasedCategories(content) {
-  const unreleasedRegex = new RegExp(
-    `${escapeRegExp(UNRELEASED_HEADING)}\\n([\\s\\S]*?)\\n---`
-  );
-  const match = content.match(unreleasedRegex);
-  if (!match) return {};
-  return parseUnreleasedSection(match[1]);
+  const body = getUnreleasedBody(content);
+  if (!body) return {};
+  return parseUnreleasedSection(body);
 }
 
 function insertUnreleasedIfMissing(content, section) {
@@ -201,16 +225,37 @@ function insertUnreleasedIfMissing(content, section) {
 }
 
 function replaceUnreleased(content, section) {
-  const unreleasedRegex = new RegExp(
-    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?^---\\s*$\\n*`,
-    'm'
+  const withHistory = ensureHistoryHeading(content);
+  const unreleasedWithSeparatorRegex = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?\\r?\\n---\\s*(?:\\r?\\n)*`
   );
-  if (unreleasedRegex.test(content)) {
-    const withHistory = ensureHistoryHeading(content);
-    return withHistory.replace(unreleasedRegex, section.trimEnd() + '\n\n');
+  if (unreleasedWithSeparatorRegex.test(withHistory)) {
+    return withHistory.replace(
+      unreleasedWithSeparatorRegex,
+      section.trimEnd() + '\n\n'
+    );
   }
 
-  return insertUnreleasedIfMissing(content, section);
+  const unreleasedBeforeHistoryRegex = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?\\r?\\n(?:\\r?\\n)*(?=${escapeRegExp(
+      HISTORY_HEADING
+    )})`
+  );
+  if (unreleasedBeforeHistoryRegex.test(withHistory)) {
+    return withHistory.replace(
+      unreleasedBeforeHistoryRegex,
+      section.trimEnd() + '\n\n'
+    );
+  }
+
+  const unreleasedToEndRegex = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*$`
+  );
+  if (unreleasedToEndRegex.test(withHistory)) {
+    return withHistory.replace(unreleasedToEndRegex, section.trimEnd());
+  }
+
+  return insertUnreleasedIfMissing(withHistory, section);
 }
 
 function ensureHistoryHeading(content) {
@@ -253,8 +298,9 @@ function stripHistoryIfNoReleases(content) {
   if (hasReleaseSections(content)) return content;
 
   const historyBlockRegex = new RegExp(
-    `\\r?\\n*${escapeRegExp(HISTORY_HEADING)}[\\s\\S]*$`,
-    'm'
+    `\\r?\\n*(?:---\\s*\\r?\\n(?:\\r?\\n)*)?${escapeRegExp(
+      HISTORY_HEADING
+    )}[\\s\\S]*$`
   );
   return content.replace(historyBlockRegex, '').trimEnd();
 }
@@ -262,6 +308,7 @@ function stripHistoryIfNoReleases(content) {
 function updateUnreleased() {
   const content = loadChangelog();
   const pullRequest = getPullRequestInfo();
+  const hasReleases = hasReleaseSections(content);
 
   if (pullRequest) {
     const categories = getUnreleasedCategories(content);
@@ -273,7 +320,9 @@ function updateUnreleased() {
       categories[category].unshift(entry);
     }
 
-    const newSection = buildUnreleasedSection(categories);
+    const newSection = buildUnreleasedSection(categories, {
+      includeSeparator: hasReleases
+    });
     const updated = stripHistoryIfNoReleases(
       replaceUnreleased(content, newSection)
     );
@@ -295,7 +344,9 @@ function updateUnreleased() {
     if (entry) categories[category].push(entry);
   });
 
-  const newSection = buildUnreleasedSection(categories);
+  const newSection = buildUnreleasedSection(categories, {
+    includeSeparator: hasReleases
+  });
   const updated = stripHistoryIfNoReleases(
     replaceUnreleased(content, newSection)
   );

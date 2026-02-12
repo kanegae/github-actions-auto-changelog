@@ -18,6 +18,7 @@ const HISTORY_HEADING = '## [Histórico]';
 const HISTORY_PLACEHOLDER = 'Sem versões publicadas';
 const UNRELEASED_HEADING = '## [Não publicado]';
 const NO_CHANGES_LABEL = 'Sem mudanças';
+const INTRO_SECTION_REGEX = /# Changelog[\s\S]*?O formato.*\n\n/;
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -80,6 +81,53 @@ function parseUnreleased(body) {
   return categories;
 }
 
+function getUnreleasedBody(content) {
+  const withSeparator = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}\\r?\\n([\\s\\S]*?)\\r?\\n---\\s*(?:\\r?\\n|$)`
+  );
+  const matchSeparator = content.match(withSeparator);
+  if (matchSeparator) return matchSeparator[1];
+
+  const beforeHistory = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}\\r?\\n([\\s\\S]*?)(?=\\r?\\n${escapeRegExp(
+      HISTORY_HEADING
+    )})`
+  );
+  const matchHistory = content.match(beforeHistory);
+  if (matchHistory) return matchHistory[1];
+
+  const toEnd = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}\\r?\\n([\\s\\S]*)$`
+  );
+  const matchEnd = content.match(toEnd);
+  if (matchEnd) return matchEnd[1];
+
+  return null;
+}
+
+function removeUnreleasedSection(content) {
+  const withSeparator = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?\\r?\\n---\\s*(?:\\r?\\n)*`
+  );
+  if (withSeparator.test(content)) {
+    return content.replace(withSeparator, '');
+  }
+
+  const beforeHistory = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?\\r?\\n(?:\\r?\\n)*(?=${escapeRegExp(
+      HISTORY_HEADING
+    )})`
+  );
+  if (beforeHistory.test(content)) {
+    return content.replace(beforeHistory, '');
+  }
+
+  const toEnd = new RegExp(
+    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*$`
+  );
+  return content.replace(toEnd, '');
+}
+
 function buildReleaseSection(version, date, categories) {
   let section = `## [${version}] - ${date}\n`;
   let hasAny = false;
@@ -113,24 +161,17 @@ function promoteRelease() {
   const date = getDate();
   const content = fs.readFileSync(CHANGELOG_PATH, 'utf-8');
 
-  const unreleasedRegex = new RegExp(
-    `${escapeRegExp(UNRELEASED_HEADING)}\\n([\\s\\S]*?)\\n---`
-  );
-  const match = content.match(unreleasedRegex);
-  if (!match) {
+  const body = getUnreleasedBody(content);
+  if (!body) {
     console.error('Sessão "Não publicado" não encontrada no CHANGELOG.md.');
     process.exit(1);
   }
 
-  const categories = parseUnreleased(match[1]);
+  const categories = parseUnreleased(body);
   const releaseSection = buildReleaseSection(version, date, categories);
 
-  const withHistory = ensureHistoryHeading(content);
-  const unreleasedSectionRegex = new RegExp(
-    `${escapeRegExp(UNRELEASED_HEADING)}[\\s\\S]*?^---\\s*$\\r?\\n*`,
-    'm'
-  );
-  let updated = withHistory.replace(unreleasedSectionRegex, '');
+  let updated = removeUnreleasedSection(content);
+  updated = ensureHistoryHeading(updated);
 
   if (!releaseSection) {
     fs.writeFileSync(CHANGELOG_PATH, updated.trimEnd());
@@ -162,7 +203,17 @@ function promoteRelease() {
 
 function ensureHistoryHeading(content) {
   if (content.includes(HISTORY_HEADING)) return content;
-  return content.replace(/---\r?\n\r?\n/, `---\n\n${HISTORY_HEADING}\n\n`);
+
+  const introMatch = content.match(INTRO_SECTION_REGEX);
+  if (introMatch) {
+    return (
+      content.slice(0, introMatch[0].length) +
+      `${HISTORY_HEADING}\n\n` +
+      content.slice(introMatch[0].length)
+    );
+  }
+
+  return `${HISTORY_HEADING}\n\n${content}`;
 }
 
 promoteRelease();
