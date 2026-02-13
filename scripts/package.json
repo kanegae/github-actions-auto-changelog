@@ -2,15 +2,16 @@
   "name": "github-actions-auto-changelog",
   "version": "1.0.0",
   "description": "Automated changelog generation using GitHub Actions and Git history (Gitflow-ready).",
-  "main": "scripts/generate-changelog.js",
+  "main": "generate-changelog.js",
   "type": "commonjs",
   "scripts": {
-    "changelog": "node scripts/generate-changelog.js",
-    "changelog:unreleased": "node scripts/update-unreleased.js",
-    "changelog:release": "node scripts/promote-release.js",
-    "test": "node scripts/test-changelog.js",
+    "changelog": "node generate-changelog.js",
+    "changelog:unreleased": "node update-unreleased.js",
+    "changelog:release": "node promote-release.js",
+    "changelog:release-notes": "node extract-release-notes.js",
+    "test": "node test-changelog.js",
     "test:full": "npm run changelog && npm run test",
-    "lint:changelog": "node scripts/generate-changelog.js || true"
+    "lint:changelog": "node generate-changelog.js || true"
   },
   "keywords": [
     "github-actions",
@@ -22,7 +23,7 @@
     "ci",
     "cd"
   ],
-  "author": "Kanegae",
+  "author": "@kanegae",
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0"

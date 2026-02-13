@@ -2,19 +2,43 @@
 
 const fs = require('fs');
 const { execSync } = require('child_process');
-const path = require('path');
+const {
+  getCategoryOrder,
+  getCategoryLabels,
+  categorizeSubject,
+  formatSubject
+} = require('./lib/changelog');
+const {
+  loadConfig,
+  resolveChangelogPath,
+  buildTagListCommand
+} = require('./lib/config');
 
 const FIELD_SEPARATOR = '\x1f';
-const HISTORY_HEADING = '## [Histórico]';
-const HISTORY_PLACEHOLDER = 'Sem versões publicadas\n\n';
+
+function getRepoRoot() {
+  try {
+    return execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
+  } catch {
+    return process.cwd();
+  }
+}
+
+const REPO_ROOT = getRepoRoot();
+const config = loadConfig(REPO_ROOT);
+const CATEGORY_ORDER = getCategoryOrder(config);
+const CATEGORY_LABELS = getCategoryLabels(config);
+const CHANGELOG_PATH = resolveChangelogPath(REPO_ROOT, config);
+const HISTORY_HEADING = config.headings.history;
+const HISTORY_PLACEHOLDER = `${config.placeholders.history}\n\n`;
 
 function run(cmd) {
-  return execSync(cmd, { encoding: 'utf-8' }).trim();
+  return execSync(cmd, { encoding: 'utf-8', cwd: REPO_ROOT }).trim();
 }
 
 function getTags() {
   try {
-    const output = run('git tag --sort=-creatordate');
+    const output = run(buildTagListCommand(config));
     return output.split('\n').filter(Boolean);
   } catch {
     return [];
@@ -56,41 +80,12 @@ function parseCommit(line) {
   return { hash, subject, author, email, date };
 }
 
-function categorizeCommit(subject) {
-  const s = subject.toLowerCase();
-  if (/^feat(\(.+\))?!?:/.test(s)) return 'Adicionado';
-  if (/^fix(\(.+\))?!?:/.test(s)) return 'Corrigido';
-  if (/^docs(\(.+\))?!?:/.test(s)) return 'Documentação';
-  if (/^style(\(.+\))?!?:/.test(s)) return 'Estilo';
-  if (/^refactor(\(.+\))?!?:/.test(s)) return 'Refatoração';
-  if (/^perf(\(.+\))?!?:/.test(s)) return 'Desempenho';
-  if (/^test(\(.+\))?!?:/.test(s)) return 'Testes';
-  if (/^(chore|build|ci|revert)(\(.+\))?!?:/.test(s)) return 'Manutenção';
-  return 'Manutenção';
-}
-
-function formatSubject(subject) {
-  const cleaned = subject.replace(/^[a-z]+(\([^)]+\))?!?:\s*/i, '');
-  const updateRelease = cleaned.match(/^update changelog for (.+)$/i);
-  if (updateRelease) {
-    return normalizeRefs(`Atualização do changelog para ${updateRelease[1]}`);
-  }
-  if (/^update unreleased changelog$/i.test(cleaned)) {
-    return normalizeRefs('Atualização da seção "Não publicado" do changelog');
-  }
-  if (!cleaned) return cleaned;
-  const normalized = cleaned[0].toUpperCase() + cleaned.slice(1);
-  return normalizeRefs(normalized);
-}
-
-function normalizeRefs(text) {
-  return text
-    .replace(/refs\/tags\/([^\s]+)/g, '$1')
-    .replace(/refs\/heads\/([^\s]+)/g, '$1');
-}
-
 function formatDate(date) {
-  return new Date(date).toISOString().slice(0, 10);
+  if (!date) return new Date().toISOString().slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.valueOf())) return date;
+  return parsed.toISOString().slice(0, 10);
 }
 
 function generateEntry(version, commits, releaseDate) {
@@ -102,26 +97,16 @@ function generateEntry(version, commits, releaseDate) {
   const categories = {};
 
   commits.forEach(commit => {
-    const category = categorizeCommit(commit.subject);
+    const category = categorizeSubject(commit.subject);
     categories[category] ??= [];
     categories[category].push(commit);
   });
 
-  const order = [
-    'Adicionado',
-    'Corrigido',
-    'Documentação',
-    'Estilo',
-    'Refatoração',
-    'Desempenho',
-    'Testes',
-    'Manutenção'
-  ];
-
-  order.forEach(category => {
+  CATEGORY_ORDER.forEach(category => {
     if (!categories[category]) return;
 
-    entry += `### ${category}\n\n`;
+    const label = CATEGORY_LABELS[category] || category;
+    entry += `### ${label}\n\n`;
     categories[category].forEach(c => {
       const subject = formatSubject(c.subject);
       entry += `- ${subject} - ${c.author}\n`;
@@ -133,7 +118,6 @@ function generateEntry(version, commits, releaseDate) {
 }
 
 function generateChangelog() {
-  const changelogPath = path.join(process.cwd(), 'CHANGELOG.md');
   const tags = getTags();
 
   let content = `# Changelog
@@ -146,7 +130,7 @@ ${HISTORY_HEADING}
 `;
 
   if (!tags.length) {
-    fs.writeFileSync(changelogPath, (content + HISTORY_PLACEHOLDER).trimEnd());
+    fs.writeFileSync(CHANGELOG_PATH, (content + HISTORY_PLACEHOLDER).trimEnd());
     console.log('Nenhuma tag encontrada. Changelog base criado.');
     return;
   }
@@ -171,7 +155,7 @@ ${HISTORY_HEADING}
     content += entry;
   }
 
-  fs.writeFileSync(changelogPath, content.trimEnd());
+  fs.writeFileSync(CHANGELOG_PATH, content.trimEnd());
   console.log('CHANGELOG.md gerado com sucesso.');
 }
 

@@ -1,0 +1,41 @@
+{
+  "changelogPath": "CHANGELOG.md",
+  "headings": {
+    "unreleased": "## [Não publicado]",
+    "history": "## [Histórico]"
+  },
+  "placeholders": {
+    "history": "Sem versões publicadas"
+  },
+  "labels": {
+    "noChanges": "Sem mudanças"
+  },
+  "categoryOrder": [
+    "feat",
+    "fix",
+    "docs",
+    "style",
+    "refactor",
+    "perf",
+    "test",
+    "chore"
+  ],
+  "categoryLabels": {
+    "feat": "Adicionado",
+    "fix": "Corrigido",
+    "docs": "Documentação",
+    "style": "Estilo",
+    "refactor": "Refatoração",
+    "perf": "Desempenho",
+    "test": "Testes",
+    "chore": "Manutenção",
+    "build": "Manutenção",
+    "ci": "Manutenção",
+    "revert": "Manutenção"
+  },
+  "tags": {
+    "sort": "-version:refname",
+    "pattern": "*",
+    "branch": "HEAD"
+  }
+}

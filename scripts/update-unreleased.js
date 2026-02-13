@@ -2,19 +2,31 @@
 
 const fs = require('fs');
 const { execSync } = require('child_process');
-const path = require('path');
+const {
+  getCategoryOrder,
+  getCategoryLabels,
+  categorizeSubject,
+  formatSubject
+} = require('./lib/changelog');
+const {
+  loadConfig,
+  resolveChangelogPath,
+  buildTagListCommand
+} = require('./lib/config');
 
-const CHANGELOG_PATH = path.join(process.cwd(), 'CHANGELOG.md');
-const CATEGORY_ORDER = [
-  'Adicionado',
-  'Corrigido',
-  'Documentação',
-  'Estilo',
-  'Refatoração',
-  'Desempenho',
-  'Testes',
-  'Manutenção'
-];
+function getRepoRoot() {
+  try {
+    return execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
+  } catch {
+    return process.cwd();
+  }
+}
+
+const REPO_ROOT = getRepoRoot();
+const config = loadConfig(REPO_ROOT);
+const CHANGELOG_PATH = resolveChangelogPath(REPO_ROOT, config);
+const CATEGORY_ORDER = getCategoryOrder(config);
+const CATEGORY_LABELS = getCategoryLabels(config);
 
 const DEFAULT_HEADER =
   '# Changelog\n\n' +
@@ -22,23 +34,22 @@ const DEFAULT_HEADER =
   'O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).\n\n';
 
 const FIELD_SEPARATOR = '\x1f';
-const HISTORY_HEADING = '## [Histórico]';
-const HISTORY_PLACEHOLDER = 'Sem versões publicadas';
-const NO_CHANGES_LABEL = 'Sem mudanças';
-const UNRELEASED_HEADING = '## [Não publicado]';
-const INTRO_SECTION_REGEX = /# Changelog[\s\S]*?O formato.*\n\n/;
+const HISTORY_HEADING = config.headings.history;
+const HISTORY_PLACEHOLDER = config.placeholders.history;
+const NO_CHANGES_LABEL = config.labels.noChanges;
+const UNRELEASED_HEADING = config.headings.unreleased;
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function run(cmd) {
-  return execSync(cmd, { encoding: 'utf-8' }).trim();
+  return execSync(cmd, { encoding: 'utf-8', cwd: REPO_ROOT }).trim();
 }
 
 function getTags() {
   try {
-    const output = run('git tag --sort=-creatordate');
+    const output = run(buildTagListCommand(config));
     return output.split('\n').filter(Boolean);
   } catch {
     return [];
@@ -48,7 +59,7 @@ function getTags() {
 function getCommitsSinceTag(tag) {
   try {
     const range = tag ? `${tag}..HEAD` : 'HEAD';
-    const cmd = `git log ${range} --pretty=format:"%h%x1f%s%x1f%an%x1f%ae%x1f%ad" --date=short`;
+    const cmd = `git log ${range} --no-merges --pretty=format:"%h%x1f%s%x1f%an%x1f%ae%x1f%ad" --date=short`;
     return run(cmd).split('\n').filter(Boolean);
   } catch {
     return [];
@@ -58,39 +69,6 @@ function getCommitsSinceTag(tag) {
 function parseCommit(line) {
   const [hash, subject, author, email, date] = line.split(FIELD_SEPARATOR);
   return { hash, subject, author, email, date };
-}
-
-function categorizeTitle(subject) {
-  const s = subject.toLowerCase();
-  if (/^feat(\(.+\))?!?:/.test(s)) return 'Adicionado';
-  if (/^fix(\(.+\))?!?:/.test(s)) return 'Corrigido';
-  if (/^docs(\(.+\))?!?:/.test(s)) return 'Documentação';
-  if (/^style(\(.+\))?!?:/.test(s)) return 'Estilo';
-  if (/^refactor(\(.+\))?!?:/.test(s)) return 'Refatoração';
-  if (/^perf(\(.+\))?!?:/.test(s)) return 'Desempenho';
-  if (/^test(\(.+\))?!?:/.test(s)) return 'Testes';
-  if (/^(chore|build|ci|revert)(\(.+\))?!?:/.test(s)) return 'Manutenção';
-  return 'Manutenção';
-}
-
-function formatSubject(subject) {
-  const cleaned = subject.replace(/^[a-z]+(\([^)]+\))?!?:\s*/i, '');
-  const updateRelease = cleaned.match(/^update changelog for (.+)$/i);
-  if (updateRelease) {
-    return normalizeRefs(`Atualização do changelog para ${updateRelease[1]}`);
-  }
-  if (/^update unreleased changelog$/i.test(cleaned)) {
-    return normalizeRefs('Atualização da seção "Não publicado" do changelog');
-  }
-  if (!cleaned) return cleaned;
-  const normalized = cleaned[0].toUpperCase() + cleaned.slice(1);
-  return normalizeRefs(normalized);
-}
-
-function normalizeRefs(text) {
-  return text
-    .replace(/refs\/tags\/([^\s]+)/g, '$1')
-    .replace(/refs\/heads\/([^\s]+)/g, '$1');
 }
 
 function formatEntry(subject, author) {
@@ -105,7 +83,8 @@ function buildUnreleasedSection(categories, options = {}) {
   let section = `${UNRELEASED_HEADING}\n\n`;
 
   CATEGORY_ORDER.forEach(category => {
-    section += `### ${category}\n\n`;
+    const label = CATEGORY_LABELS[category] || category;
+    section += `### ${label}\n\n`;
     const items = categories[category] || [];
 
     if (items.length) {
@@ -137,12 +116,18 @@ function loadChangelog() {
 function parseUnreleasedSection(body) {
   const lines = body.split('\n');
   const categories = {};
+  const labelToKey = {};
+  CATEGORY_ORDER.forEach(key => {
+    const label = CATEGORY_LABELS[key] || key;
+    if (!labelToKey[label]) labelToKey[label] = key;
+  });
   let current = null;
 
   lines.forEach(line => {
     const heading = line.match(/^###\s+(.*)$/);
     if (heading) {
-      current = heading[1].trim();
+      const label = heading[1].trim();
+      current = labelToKey[label] || label;
       categories[current] ??= [];
       return;
     }
@@ -213,15 +198,25 @@ function getUnreleasedCategories(content) {
   return parseUnreleasedSection(body);
 }
 
+function findFirstSectionIndex(content) {
+  const match = content.match(/^##\s+/m);
+  return match ? match.index : -1;
+}
+
 function insertUnreleasedIfMissing(content, section) {
   if (content.includes(UNRELEASED_HEADING)) return content;
 
-  const introMatch = content.match(INTRO_SECTION_REGEX);
-  const baseContent = introMatch
-    ? content.slice(0, introMatch[0].length) + section + content.slice(introMatch[0].length)
-    : section + content;
+  const idx = findFirstSectionIndex(content);
+  if (idx === -1) {
+    const trimmed = content.trimEnd();
+    return ensureHistoryHeading(`${trimmed}\n\n${section}`);
+  }
 
-  return ensureHistoryHeading(baseContent);
+  const before = content.slice(0, idx);
+  const after = content.slice(idx);
+  const prefix = before.endsWith('\n') ? before : `${before}\n`;
+
+  return ensureHistoryHeading(prefix + section + after);
 }
 
 function replaceUnreleased(content, section) {
@@ -259,11 +254,33 @@ function replaceUnreleased(content, section) {
 }
 
 function ensureHistoryHeading(content) {
-  let updated = content;
-  if (!updated.includes(HISTORY_HEADING)) {
-    updated = updated.replace(/---\r?\n\r?\n/, `---\n\n${HISTORY_HEADING}\n\n`);
+  if (content.includes(HISTORY_HEADING)) {
+    return ensureHistoryPlaceholder(content);
   }
-  return ensureHistoryPlaceholder(updated);
+
+  const separatorRegex = /---\r?\n\r?\n/;
+  if (separatorRegex.test(content)) {
+    const updated = content.replace(
+      separatorRegex,
+      `---\n\n${HISTORY_HEADING}\n\n`
+    );
+    return ensureHistoryPlaceholder(updated);
+  }
+
+  if (content.includes(UNRELEASED_HEADING)) {
+    const updated = `${content.trimEnd()}\n\n${HISTORY_HEADING}\n\n`;
+    return ensureHistoryPlaceholder(updated);
+  }
+
+  const idx = findFirstSectionIndex(content);
+  if (idx !== -1) {
+    const before = content.slice(0, idx).trimEnd();
+    const after = content.slice(idx).trimStart();
+    const updated = `${before}\n\n${HISTORY_HEADING}\n\n${after}`;
+    return ensureHistoryPlaceholder(updated);
+  }
+
+  return ensureHistoryPlaceholder(`${content.trimEnd()}\n\n${HISTORY_HEADING}\n\n`);
 }
 
 function ensureHistoryPlaceholder(content) {
@@ -312,7 +329,7 @@ function updateUnreleased() {
 
   if (pullRequest) {
     const categories = getUnreleasedCategories(content);
-    const category = categorizeTitle(pullRequest.title);
+    const category = categorizeSubject(pullRequest.title);
     categories[category] ??= [];
 
     const entry = formatEntry(pullRequest.title, pullRequest.author);
@@ -338,7 +355,7 @@ function updateUnreleased() {
 
   const categories = {};
   commits.forEach(commit => {
-    const category = categorizeTitle(commit.subject);
+    const category = categorizeSubject(commit.subject);
     categories[category] ??= [];
     const entry = formatEntry(commit.subject, commit.author);
     if (entry) categories[category].push(entry);

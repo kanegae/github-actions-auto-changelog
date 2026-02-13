@@ -1,17 +1,19 @@
-name: Update Unreleased Changelog
+name: Changelog / Update Unreleased
 
 env:
   UNRELEASED_BRANCH: development
 
 on:
   pull_request:
-    branches:
-      - "development" # manter em sincronia com env.UNRELEASED_BRANCH
     types:
       - closed
 
 permissions:
   contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   changelog_unreleased:
@@ -19,29 +21,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Validate target branch
+        run: |
+          if [ "${{ github.event.pull_request.base.ref }}" != "${{ env.UNRELEASED_BRANCH }}" ]; then
+            echo "PR não é da branch alvo (${{ env.UNRELEASED_BRANCH }}). Encerrando execução."
+            echo "SKIP_CHANGELOG=true" >> "$GITHUB_ENV"
+          fi
+
       - name: Checkout repository
+        if: env.SKIP_CHANGELOG != 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ env.UNRELEASED_BRANCH }}
 
       - name: Setup Node.js
+        if: env.SKIP_CHANGELOG != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "18"
 
       - name: Install dependencies
-        run: npm install
+        if: env.SKIP_CHANGELOG != 'true'
+        working-directory: scripts
+        run: npm ci
 
       - name: Generate unreleased changelog
+        if: env.SKIP_CHANGELOG != 'true'
+        working-directory: scripts
         run: npm run changelog:unreleased
 
       - name: Commit and push changelog
+        if: env.SKIP_CHANGELOG != 'true'
         run: |
           BRANCH="${{ env.UNRELEASED_BRANCH }}"
 
+          git fetch origin "$BRANCH"
           git checkout "$BRANCH"
-          git pull origin "$BRANCH"
+          git reset --hard "origin/$BRANCH"
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"

@@ -1,4 +1,4 @@
-name: Update Unreleased Changelog (Reusable)
+name: Changelog / Update Unreleased (Reusable)
 
 on:
   workflow_call:
@@ -27,6 +27,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   changelog_unreleased:
@@ -60,8 +64,9 @@ jobs:
         run: |
           BRANCH="${{ inputs.unreleased_branch }}"
 
+          git fetch origin "$BRANCH"
           git checkout "$BRANCH"
-          git pull origin "$BRANCH"
+          git reset --hard "origin/$BRANCH"
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"

@@ -7,29 +7,19 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Adicionado
 
-- Implementação de reusable workflow - Anderson Kanegae Soares Rocha
+- Sem mudanças
 
 ### Corrigido
 
-- Remoção do histórico quando não há releases - Anderson Kanegae Soares Rocha
-- Correção e ajustes nos placeholders - Anderson Kanegae Soares Rocha
-- Remoção da seção 'Não publicado' em releases sem itens a promover - Anderson Kanegae Soares Rocha
-- Correção para evitar conflito ao trocar de branch - Anderson Kanegae Soares Rocha
-- Correção para não exibir seção 'Não publicado' na release - Anderson Kanegae Soares Rocha
-- Correção do erro de checkout ao atualizar changelog - Anderson Kanegae Soares Rocha
-- Correção e ajustes nos placeholders - Anderson Kanegae Soares Rocha
-- Correção das referências dos reusable workflows - Anderson Kanegae Soares Rocha
-- Correção para workflow não quebrar quando release branch não existir - Anderson Kanegae Soares Rocha
-- Correção para workflow não quebrar quando release branch não existir - Anderson Kanegae Soares Rocha
+- Sem mudanças
 
 ### Documentação
 
-- Correção ortográfica - Anderson Kanegae Soares Rocha
-- Atualização do changelog para v1.3 - GitHub Action
+- Sem mudanças
 
 ### Estilo
 
-- Padronização do separador dos changelogs - Anderson Kanegae Soares Rocha
+- Sem mudanças
 
 ### Refatoração
 
@@ -45,71 +35,4 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Manutenção
 
-- Melhorias gerais - Anderson Kanegae Soares Rocha
-- Ajustes nos scripts, README e testes - Anderson Kanegae Soares Rocha
-- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
-- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
-- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
-- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
-- Ajustes e padronização do changelog e workflows - Anderson Kanegae Soares Rocha
-
----
-
-## [Histórico]
-
-## [1.3] - 2026-02-06
-
-### Adicionado
-
-- Github Action para atualizar sessão unreleased do changelog a cada PR aceito - Anderson Kanegae Soares Rocha
-
-### Documentação
-
-- Atualização da seção "Não publicado" do changelog - GitHub Action
-- Ajustes no README - Anderson Kanegae Soares Rocha
-- Atualização do changelog para v1.2 - GitHub Action
-
-## [1.2] - 2026-02-06
-
-### Documentação
-
-- Reorganização do README - Anderson Kanegae Soares Rocha
-- Atualização do changelog para v1.1 - GitHub Action
-
-## [1.1] - 2026-02-05
-
-### Documentação
-
-- Melhorias no README - Anderson Kanegae Soares Rocha
-- Atualização do changelog para v1.0 - GitHub Action
-
-## [1.0] - 2026-02-05
-
-### Corrigido
-
-- Correção dos scripts  no Github Action - Anderson Kanegae Soares Rocha
-
-### Documentação
-
-- Atualização do changelog para v1.0-test - GitHub Action
-
-## [1.0-test] - 2026-02-05
-
-### Adicionado
-
-- Github Action para gerar changelog - Anderson Kanegae Soares Rocha
-
-### Corrigido
-
-- Correção no Github Action para detecção da branch atual com fallback - Anderson Kanegae Soares Rocha
-- Correção no Github Action para gerar changelog na branch atual - Anderson Kanegae Soares Rocha
-- Correção no Github Action para gerar changelog na branch atual - Anderson Kanegae Soares Rocha
-- Correção de texto - Anderson Kanegae Soares Rocha
-
-### Refatoração
-
-- Melhorias gerais na geração de changelog - Anderson Kanegae Soares Rocha
-
-### Manutenção
-
-- Commit inicial - Anderson Kanegae Soares Rocha
+- Sem mudanças

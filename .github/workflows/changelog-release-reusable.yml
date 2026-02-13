@@ -1,4 +1,4 @@
-name: Generate Changelog on Release (Reusable)
+name: Changelog / Generate Release (Reusable)
 
 on:
   workflow_call:
@@ -27,6 +27,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   changelog:
@@ -82,19 +86,30 @@ jobs:
         if: env.SKIP_CHANGELOG != 'true'
         run: |
           TAG="${{ github.event.release.tag_name }}"
+          PUBLISHED_AT="${{ github.event.release.published_at }}"
           echo "RELEASE_VERSION=${TAG#v}" >> $GITHUB_ENV
-          echo "RELEASE_DATE=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
+          if [ -n "$PUBLISHED_AT" ]; then
+            RELEASE_DATE="${PUBLISHED_AT%%T*}"
+          else
+            RELEASE_DATE="$(date -u +%Y-%m-%d)"
+          fi
+          echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_ENV
 
       - name: Checkout target branch
         if: env.SKIP_CHANGELOG != 'true'
         run: |
           echo "Usando branch: $TARGET_BRANCH"
+          git fetch origin "$TARGET_BRANCH"
           git checkout "$TARGET_BRANCH"
-          git pull origin "$TARGET_BRANCH"
+          git reset --hard "origin/$TARGET_BRANCH"
 
       - name: Promote unreleased to release
         if: env.SKIP_CHANGELOG != 'true'
         run: node .changelog-workflow/scripts/promote-release.js --version "$RELEASE_VERSION" --date "$RELEASE_DATE"
+
+      - name: Extract release notes
+        if: env.SKIP_CHANGELOG != 'true'
+        run: node .changelog-workflow/scripts/extract-release-notes.js --version "$RELEASE_VERSION"
 
       - name: Commit and push changelog
         if: env.SKIP_CHANGELOG != 'true'
@@ -112,7 +127,7 @@ jobs:
           git push origin "$TARGET_BRANCH"
 
       - name: Update GitHub Release
-        if: env.SKIP_CHANGELOG != 'true'
+        if: ${{ env.SKIP_CHANGELOG != 'true' && hashFiles('RELEASE_NOTES.md') != '' }}
         uses: softprops/action-gh-release@v2
         with:
-          body_path: CHANGELOG.md
+          body_path: RELEASE_NOTES.md

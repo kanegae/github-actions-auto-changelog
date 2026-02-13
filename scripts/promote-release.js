@@ -1,24 +1,28 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const { execSync } = require('child_process');
 const path = require('path');
+const { getCategoryOrder, getCategoryLabels } = require('./lib/changelog');
+const { loadConfig, resolveChangelogPath } = require('./lib/config');
 
-const CHANGELOG_PATH = path.join(process.cwd(), 'CHANGELOG.md');
-const CATEGORY_ORDER = [
-  'Adicionado',
-  'Corrigido',
-  'Documentação',
-  'Estilo',
-  'Refatoração',
-  'Desempenho',
-  'Testes',
-  'Manutenção'
-];
-const HISTORY_HEADING = '## [Histórico]';
-const HISTORY_PLACEHOLDER = 'Sem versões publicadas';
-const UNRELEASED_HEADING = '## [Não publicado]';
-const NO_CHANGES_LABEL = 'Sem mudanças';
-const INTRO_SECTION_REGEX = /# Changelog[\s\S]*?O formato.*\n\n/;
+function getRepoRoot() {
+  try {
+    return execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
+  } catch {
+    return process.cwd();
+  }
+}
+
+const REPO_ROOT = getRepoRoot();
+const config = loadConfig(REPO_ROOT);
+const CHANGELOG_PATH = resolveChangelogPath(REPO_ROOT, config);
+const CATEGORY_ORDER = getCategoryOrder(config);
+const CATEGORY_LABELS = getCategoryLabels(config);
+const HISTORY_HEADING = config.headings.history;
+const HISTORY_PLACEHOLDER = config.placeholders.history;
+const UNRELEASED_HEADING = config.headings.unreleased;
+const NO_CHANGES_LABEL = config.labels.noChanges;
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -53,15 +57,44 @@ function getDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getReleaseNotesPath() {
+  const argPath = getArgValue('--release-notes');
+  if (argPath) return argPath;
+  if (process.env.RELEASE_NOTES_PATH) return process.env.RELEASE_NOTES_PATH;
+  return null;
+}
+
+function resolveOutputPath(outputPath) {
+  if (!outputPath) return null;
+  return path.isAbsolute(outputPath)
+    ? outputPath
+    : path.join(process.cwd(), outputPath);
+}
+
+function writeReleaseNotes(section, version, date, outputPath) {
+  if (!outputPath) return;
+  const resolvedPath = resolveOutputPath(outputPath);
+  const notes = section
+    ? section.trimEnd()
+    : `## [${version}] - ${date}\n\n- ${NO_CHANGES_LABEL}\n`;
+  fs.writeFileSync(resolvedPath, notes.trimEnd());
+}
+
 function parseUnreleased(body) {
   const lines = body.split('\n');
   const categories = {};
+  const labelToKey = {};
+  CATEGORY_ORDER.forEach(key => {
+    const label = CATEGORY_LABELS[key] || key;
+    if (!labelToKey[label]) labelToKey[label] = key;
+  });
   let current = null;
 
   lines.forEach(line => {
     const heading = line.match(/^###\s+(.*)$/);
     if (heading) {
-      current = heading[1].trim();
+      const label = heading[1].trim();
+      current = labelToKey[label] || label;
       categories[current] ??= [];
       return;
     }
@@ -136,7 +169,8 @@ function buildReleaseSection(version, date, categories) {
     const items = categories[category] || [];
     if (!items.length) return;
     hasAny = true;
-    section += `### ${category}\n`;
+    const label = CATEGORY_LABELS[category] || category;
+    section += `### ${label}\n`;
     items.forEach(item => {
       section += `- ${item}\n`;
     });
@@ -159,6 +193,7 @@ function promoteRelease() {
   }
 
   const date = getDate();
+  const releaseNotesPath = getReleaseNotesPath();
   const content = fs.readFileSync(CHANGELOG_PATH, 'utf-8');
 
   const body = getUnreleasedBody(content);
@@ -169,6 +204,7 @@ function promoteRelease() {
 
   const categories = parseUnreleased(body);
   const releaseSection = buildReleaseSection(version, date, categories);
+  writeReleaseNotes(releaseSection, version, date, releaseNotesPath);
 
   let updated = removeUnreleasedSection(content);
   updated = ensureHistoryHeading(updated);
@@ -204,16 +240,22 @@ function promoteRelease() {
 function ensureHistoryHeading(content) {
   if (content.includes(HISTORY_HEADING)) return content;
 
-  const introMatch = content.match(INTRO_SECTION_REGEX);
-  if (introMatch) {
-    return (
-      content.slice(0, introMatch[0].length) +
-      `${HISTORY_HEADING}\n\n` +
-      content.slice(introMatch[0].length)
+  const separatorRegex = /---\r?\n\r?\n/;
+  if (separatorRegex.test(content)) {
+    return content.replace(
+      separatorRegex,
+      `---\n\n${HISTORY_HEADING}\n\n`
     );
   }
 
-  return `${HISTORY_HEADING}\n\n${content}`;
+  const match = content.match(/^##\s+/m);
+  if (match) {
+    const before = content.slice(0, match.index).trimEnd();
+    const after = content.slice(match.index).trimStart();
+    return `${before}\n\n${HISTORY_HEADING}\n\n${after}`;
+  }
+
+  return `${content.trimEnd()}\n\n${HISTORY_HEADING}\n\n`;
 }
 
 promoteRelease();
