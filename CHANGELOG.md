@@ -11,6 +11,8 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Corrigido
 
+- Remoção do histórico quando não há releases - Anderson Kanegae Soares Rocha
+- Correção e ajustes nos placeholders - Anderson Kanegae Soares Rocha
 - Remoção da seção 'Não publicado' em releases sem itens a promover - Anderson Kanegae Soares Rocha
 - Correção para evitar conflito ao trocar de branch - Anderson Kanegae Soares Rocha
 - Correção para não exibir seção 'Não publicado' na release - Anderson Kanegae Soares Rocha
@@ -27,7 +29,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 
 ### Estilo
 
-- Sem mudanças
+- Padronização do separador dos changelogs - Anderson Kanegae Soares Rocha
 
 ### Refatoração
 

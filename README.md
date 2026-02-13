@@ -12,18 +12,18 @@ e promovendo para versão em releases na branch definida em `RELEASE_BRANCH` (ex
 
 ### Configuração
 
-- `RELEASE_BRANCH` em `/.github/workflows/changelog.yml`: branch usada para validar releases e receber o commit do changelog (ex.: `master`).
-- `UNRELEASED_BRANCH` em `/.github/workflows/unreleased.yml`: branch alvo do "Não publicado" e do commit automatizado (ex.: `development`).
+- `RELEASE_BRANCH` em `/.github/workflows/changelog-release.yml`: branch usada para validar releases e receber o commit do changelog (ex.: `master`).
+- `UNRELEASED_BRANCH` em `/.github/workflows/changelog-unreleased.yml`: branch alvo do "Não publicado" e do commit automatizado (ex.: `development`).
 
 ### Componentes principais
 
-1. **Workflow de "Não publicado"** (`.github/workflows/unreleased.yml`)
+1. **Workflow de "Não publicado"** (`.github/workflows/changelog-unreleased.yml`)
    - Dispara em PR fechado na branch definida em `UNRELEASED_BRANCH` (ex.: `development`, apenas quando o PR é mergeado)
    - Ignora PRs de forks (usa apenas o repositório principal)
    - Atualiza a seção `"Não publicado"` usando o título do PR
    - Faz commit e push das mudanças automaticamente
 
-2. **Workflow de Release** (`.github/workflows/changelog.yml`)
+2. **Workflow de Release** (`.github/workflows/changelog-release.yml`)
    - Dispara quando um release é publicado
    - Valida se o release foi feito a partir da branch definida em `RELEASE_BRANCH` (ex.: `master`)
    - Promove o conteúdo de `"Não publicado"` para uma versão com data
@@ -90,7 +90,7 @@ npm run test
 Crie os workflows no repositório consumidor apontando para este projeto:
 
 ```yaml
-# .github/workflows/unreleased.yml
+# .github/workflows/changelog-unreleased.yml
 name: Update Unreleased Changelog
 
 on:
@@ -103,7 +103,7 @@ permissions:
 
 jobs:
   changelog:
-    uses: kanegae/github-actions-auto-changelog/.github/workflows/reusable-unreleased.yml@v1
+    uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-unreleased-reusable.yml@v1
     with:
       unreleased_branch: development
       workflow_repository: kanegae/github-actions-auto-changelog
@@ -111,7 +111,7 @@ jobs:
 ```
 
 ```yaml
-# .github/workflows/release.yml
+# .github/workflows/changelog-release.yml
 name: Generate Changelog on Release
 
 on:
@@ -123,7 +123,7 @@ permissions:
 
 jobs:
   changelog:
-    uses: kanegae/github-actions-auto-changelog/.github/workflows/reusable-release.yml@v1
+    uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-release-reusable.yml@v1
     with:
       release_branch: master
       workflow_repository: org/github-actions-auto-changelog
@@ -162,18 +162,18 @@ docs: atualizar instruções de instalação
 .
 ├── .github/
 │   └── workflows/
-│       ├── changelog.yml           # Workflow de release
-│       ├── unreleased.yml          # Workflow de "Não publicado"
-│       ├── reusable-release.yml    # Workflow reutilizável de release
-│       └── reusable-unreleased.yml # Workflow reutilizável de "Não publicado"
+│       ├── changelog-release.yml             # Workflow de release
+│       ├── changelog-unreleased.yml          # Workflow de "Não publicado"
+│       ├── changelog-release-reusable.yml    # Workflow reutilizável de release
+│       └── changelog-unreleased-reusable.yml # Workflow reutilizável de "Não publicado"
 ├── scripts/
-│   ├── generate-changelog.js       # Script de geração de changelog
-│   ├── update-unreleased.js        # Atualiza a seção "Não publicado" com título do PR
-│   ├── promote-release.js          # Promove "Não publicado" para release
-│   └── test-changelog.js           # Script de testes
-├── CHANGELOG.md                    # Arquivo de changelog
-├── package.json                    # Configuração Node.js
-└── README.md                       # Este arquivo
+│   ├── generate-changelog.js                 # Script de geração de changelog
+│   ├── update-unreleased.js                  # Atualiza a seção "Não publicado" com título do PR
+│   ├── promote-release.js                    # Promove "Não publicado" para release
+│   └── test-changelog.js                     # Script de testes
+├── CHANGELOG.md                              # Arquivo de changelog
+├── package.json                              # Configuração Node.js
+└── README.md                                 # Este arquivo
 ```
 
 ## Mais informações

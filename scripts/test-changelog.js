@@ -62,10 +62,10 @@ const results = [];
    TESTE 1 — Estrutura básica do projeto
 ======================================================= */
 results.push(runTest('Estrutura básica do projeto', () => {
-  testFileExists('.github/workflows/changelog.yml');
-  testFileExists('.github/workflows/unreleased.yml');
-  testFileExists('.github/workflows/reusable-release.yml');
-  testFileExists('.github/workflows/reusable-unreleased.yml');
+  testFileExists('.github/workflows/changelog-release.yml');
+  testFileExists('.github/workflows/changelog-unreleased.yml');
+  testFileExists('.github/workflows/changelog-release-reusable.yml');
+  testFileExists('.github/workflows/changelog-unreleased-reusable.yml');
   testFileExists('scripts/generate-changelog.js');
   testFileExists('scripts/update-unreleased.js');
   testFileExists('scripts/promote-release.js');
@@ -78,24 +78,24 @@ results.push(runTest('Estrutura básica do projeto', () => {
    TESTE 2 — Workflow GitHub Actions
 ======================================================= */
 results.push(runTest('Workflow GitHub Actions válido', () => {
-  testFileContains('.github/workflows/changelog.yml', 'release:');
-  testFileContains('.github/workflows/changelog.yml', 'published');
-  testFileContains('.github/workflows/changelog.yml', 'npm run changelog:release');
-  testFileContains('.github/workflows/changelog.yml', 'actions/checkout@v4');
-  testFileContains('.github/workflows/unreleased.yml', 'pull_request:');
-  testFileContains('.github/workflows/unreleased.yml', 'types:');
-  testFileContains('.github/workflows/unreleased.yml', 'closed');
-  testFileContains('.github/workflows/unreleased.yml', 'development');
-  testFileContains('.github/workflows/unreleased.yml', 'npm run changelog:unreleased');
-  testFileContains('.github/workflows/unreleased.yml', 'UNRELEASED_BRANCH');
-  testFileContains('.github/workflows/reusable-unreleased.yml', 'workflow_call');
-  testFileContains('.github/workflows/reusable-unreleased.yml', 'workflow_repository');
-  testFileContains('.github/workflows/reusable-unreleased.yml', 'workflow_ref');
-  testFileContains('.github/workflows/reusable-unreleased.yml', 'update-unreleased.js');
-  testFileContains('.github/workflows/reusable-release.yml', 'workflow_call');
-  testFileContains('.github/workflows/reusable-release.yml', 'workflow_repository');
-  testFileContains('.github/workflows/reusable-release.yml', 'workflow_ref');
-  testFileContains('.github/workflows/reusable-release.yml', 'promote-release.js');
+  testFileContains('.github/workflows/changelog-release.yml', 'release:');
+  testFileContains('.github/workflows/changelog-release.yml', 'published');
+  testFileContains('.github/workflows/changelog-release.yml', 'npm run changelog:release');
+  testFileContains('.github/workflows/changelog-release.yml', 'actions/checkout@v4');
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'pull_request:');
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'types:');
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'closed');
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'development');
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'npm run changelog:unreleased');
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'UNRELEASED_BRANCH');
+  testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'workflow_call');
+  testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'workflow_repository');
+  testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'workflow_ref');
+  testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'update-unreleased.js');
+  testFileContains('.github/workflows/changelog-release-reusable.yml', 'workflow_call');
+  testFileContains('.github/workflows/changelog-release-reusable.yml', 'workflow_repository');
+  testFileContains('.github/workflows/changelog-release-reusable.yml', 'workflow_ref');
+  testFileContains('.github/workflows/changelog-release-reusable.yml', 'promote-release.js');
 }));
 
 /* =======================================================
