@@ -1,114 +1,16 @@
 name: Changelog / Generate Release
 
-env:
-  RELEASE_BRANCH: master
-
 on:
   release:
-    types:
-      - published
+    types: [published]
 
 permissions:
   contents: write
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   changelog:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-
-      - name: Install dependencies
-        working-directory: scripts
-        run: npm ci
-
-      - name: Validate release on release branch
-        id: detect_branch
-        run: |
-          echo "Validando release na $RELEASE_BRANCH..."
-
-          TAG="${{ github.event.release.tag_name }}"
-          TARGET_COMMITISH="${{ github.event.release.target_commitish }}"
-
-          if ! git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" > /dev/null; then
-            echo "Branch $RELEASE_BRANCH não existe no remoto."
-            echo "SKIP_CHANGELOG=true" >> $GITHUB_ENV
-            exit 0
-          fi
-
-          git fetch origin "$RELEASE_BRANCH" --tags
-
-          TAG_COMMIT="$(git rev-list -n 1 "refs/tags/$TAG")"
-
-          if ! git merge-base --is-ancestor "$TAG_COMMIT" "origin/$RELEASE_BRANCH"; then
-            echo "Tag $TAG não está contida na $RELEASE_BRANCH (target_commitish: $TARGET_COMMITISH)"
-            echo "SKIP_CHANGELOG=true" >> $GITHUB_ENV
-            exit 0
-          fi
-
-          echo "Tag validada na $RELEASE_BRANCH (target_commitish: $TARGET_COMMITISH)"
-          echo "TARGET_BRANCH=$RELEASE_BRANCH" >> $GITHUB_ENV
-
-      - name: Prepare release info
-        if: env.SKIP_CHANGELOG != 'true'
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          PUBLISHED_AT="${{ github.event.release.published_at }}"
-          echo "RELEASE_VERSION=${TAG#v}" >> $GITHUB_ENV
-          if [ -n "$PUBLISHED_AT" ]; then
-            RELEASE_DATE="${PUBLISHED_AT%%T*}"
-          else
-            RELEASE_DATE="$(date -u +%Y-%m-%d)"
-          fi
-          echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_ENV
-
-      - name: Checkout target branch
-        if: env.SKIP_CHANGELOG != 'true'
-        run: |
-          echo "Usando branch: $TARGET_BRANCH"
-          git fetch origin "$TARGET_BRANCH"
-          git checkout "$TARGET_BRANCH"
-          git reset --hard "origin/$TARGET_BRANCH"
-
-      - name: Promote unreleased to release
-        if: env.SKIP_CHANGELOG != 'true'
-        working-directory: scripts
-        run: npm run changelog:release -- --version "$RELEASE_VERSION" --date "$RELEASE_DATE"
-
-      - name: Extract release notes
-        if: env.SKIP_CHANGELOG != 'true'
-        working-directory: scripts
-        run: node extract-release-notes.js --version "$RELEASE_VERSION"
-
-      - name: Commit and push changelog
-        if: env.SKIP_CHANGELOG != 'true'
-        run: |
-          if git diff --quiet -- CHANGELOG.md; then
-            echo "Sem mudanças"
-            exit 0
-          fi
-
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          git add CHANGELOG.md
-          git commit -m "docs: Atualização do changelog para ${{ github.ref }}"
-          git push origin "$TARGET_BRANCH"
-
-      - name: Update GitHub Release
-        if: ${{ env.SKIP_CHANGELOG != 'true' && hashFiles('RELEASE_NOTES.md') != '' }}
-        uses: softprops/action-gh-release@v2
-        with:
-          body_path: RELEASE_NOTES.md
+    uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-release-reusable.yml@development
+    with:
+      release_branch: master
+      workflow_repository: kanegae/github-actions-auto-changelog
+      workflow_ref: development

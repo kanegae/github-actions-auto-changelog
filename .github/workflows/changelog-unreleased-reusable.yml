@@ -20,10 +20,6 @@ on:
         required: false
         type: string
         default: "18"
-    secrets:
-      workflow_token:
-        description: Token opcional para checkout do repositório do workflow
-        required: false
 
 permissions:
   contents: write
@@ -44,13 +40,20 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.unreleased_branch }}
 
+      - name: Sync branch
+        run: |
+          BRANCH="${{ inputs.unreleased_branch }}"
+
+          git fetch origin "$BRANCH"
+          git checkout "$BRANCH"
+          git reset --hard "origin/$BRANCH"
+
       - name: Checkout workflow repository
         uses: actions/checkout@v4
         with:
           repository: ${{ inputs.workflow_repository }}
           ref: ${{ inputs.workflow_ref }}
           path: .changelog-workflow
-          token: ${{ secrets.workflow_token || secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -64,13 +67,18 @@ jobs:
         run: |
           BRANCH="${{ inputs.unreleased_branch }}"
 
-          git fetch origin "$BRANCH"
-          git checkout "$BRANCH"
-          git reset --hard "origin/$BRANCH"
-
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
           git add CHANGELOG.md
-          git commit -m 'docs: Atualização da seção "Não publicado" do changelog' || echo "Sem mudanças"
+          if git diff --cached --quiet; then
+            echo "Sem mudanças"
+            exit 0
+          fi
+
+          git commit -m 'docs: Atualização da seção "Não publicado" do changelog'
+
+          git fetch origin "$BRANCH"
+          git rebase "origin/$BRANCH"
+
           git push origin "$BRANCH"

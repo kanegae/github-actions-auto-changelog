@@ -5,21 +5,20 @@ Prova de conceito para validar o uso de GitHub Actions na geração automática 
 ## Objetivo
 
 Validar um workflow com GitHub Actions que mantenha o `CHANGELOG.md` atualizado a partir dos títulos de PRs,
-mantendo a seção "Não publicado" em merges na branch definida em `UNRELEASED_BRANCH` (ex.: `development`)
-e promovendo para versão em releases na branch definida em `RELEASE_BRANCH` (ex.: `master`).
+mantendo a seção "Não publicado" em merges na branch definida no workflow de "Não publicado" (ex.: `development`)
+e promovendo para versão em releases na branch definida no workflow de release (ex.: `master`).
 
 ## Como funciona
 
 ### Configuração
 
-- `RELEASE_BRANCH` em `/.github/workflows/changelog-release.yml`: branch usada para validar releases e receber o commit do changelog (ex.: `master`).
-- `UNRELEASED_BRANCH` em `/.github/workflows/changelog-unreleased.yml`: branch alvo do "Não publicado" e do commit automatizado (ex.: `development`).
+- `release_branch` em `/.github/workflows/changelog-release.yml`: branch usada para validar releases e receber o commit do changelog (ex.: `master`).
+- `unreleased_branch` e `on.pull_request.branches` em `/.github/workflows/changelog-unreleased.yml`: branch alvo do "Não publicado" e do commit automatizado (ex.: `development`).
 - `changelog-config.json` (opcional, no repositório consumidor): sobrescreve os padrões do changelog (títulos, labels, chaves de categorias e filtros de tags).
 
 Se existir `changelog-config.json` na raiz do repositório consumidor, ele sobrescreve os padrões.
 
-Prioridade para filtrar tags por branch:
-`CHANGELOG_TAGS_BRANCH` → `RELEASE_BRANCH` → `UNRELEASED_BRANCH` → `tags.branch` → `HEAD`.
+Para filtrar tags por branch, configure `tags.branch` no `changelog-config.json` (padrão: `HEAD`).
 
 Exemplo de sobrescrita:
 
@@ -44,14 +43,14 @@ Exemplo de sobrescrita:
 ### Componentes principais
 
 1. **Workflow de "Não publicado"** (`.github/workflows/changelog-unreleased.yml`)
-   - Dispara em PR fechado; o job só executa quando o PR é mergeado e a branch base é a definida em `UNRELEASED_BRANCH` (ex.: `development`)
+   - Dispara em PR fechado; o job só executa quando o PR é mergeado e a branch base é a definida no workflow (ex.: `development`)
    - Ignora PRs de forks (usa apenas o repositório principal)
    - Atualiza a seção `"Não publicado"` usando o título do PR
    - Faz commit e push das mudanças automaticamente
 
 2. **Workflow de Release** (`.github/workflows/changelog-release.yml`)
    - Dispara quando um release é publicado
-   - Valida se o release foi feito a partir da branch definida em `RELEASE_BRANCH` (ex.: `master`)
+   - Valida se o release foi feito a partir da branch definida no input `release_branch` (ex.: `master`)
    - Promove o conteúdo de `"Não publicado"` para uma versão com a data do release
    - Atualiza o body do release com a seção da versão atual
    - Faz commit e push das mudanças automaticamente
@@ -117,13 +116,13 @@ npm run test
 
 ## Uso via GitHub Actions
 
-1. Merge na branch definida em `UNRELEASED_BRANCH` (ex.: `development`) atualiza `"Não publicado"` com o título do PR automaticamente.
+1. Merge na branch definida no workflow (ex.: `development`) atualiza `"Não publicado"` com o título do PR automaticamente.
 
 2. Publique um release no GitHub:
    - Acesse a página de releases do repositório
    - Clique em "Create a new release"
    - Selecione ou crie uma tag
-   - Escolha a branch definida em `RELEASE_BRANCH` como base do release (ex.: `master`)
+   - Escolha a branch configurada no input `release_branch` como base do release (ex.: `master`)
    - Publique o release
 
 3. O workflow promove `"Não publicado"` para a nova versão e faz commit/push.
@@ -173,9 +172,6 @@ jobs:
       workflow_ref: development
 ```
 
-Observação: se o checkout do repositório do workflow falhar por permissões, passe `workflow_token`
-com acesso ao repositório deste workflow.
-
 ## Convenção de títulos
 
 Para a categorização funcionar, os títulos de PRs devem seguir Conventional Commits:
@@ -219,6 +215,7 @@ docs: atualizar instruções de instalação
 │   │   ├── changelog.js                      # Funções compartilhadas
 │   │   └── config.js                         # Leitura e validação de configurações
 │   ├── test-changelog.js                     # Script de testes
+│   ├── package-lock.json                     # Lockfile do npm
 │   └── package.json                          # Configuração Node.js
 ├── CHANGELOG.md                              # Arquivo de changelog (no repositório consumidor)
 └── README.md                                 # README do repositório

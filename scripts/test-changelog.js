@@ -30,6 +30,11 @@ function getRepoRoot() {
 }
 
 const REPO_ROOT = getRepoRoot();
+const SCRIPTS_DIR = process.env.CHANGELOG_SCRIPTS_DIR || 'scripts';
+
+function scriptsPath(...parts) {
+  return path.join(SCRIPTS_DIR, ...parts);
+}
 
 function resolvePath(filePath) {
   return path.join(REPO_ROOT, filePath);
@@ -71,6 +76,60 @@ function testFileContains(filePath, content) {
   }
 }
 
+function testFileNotContains(filePath, content) {
+  const fullPath = resolvePath(filePath);
+  const fileContent = fs.readFileSync(fullPath, 'utf-8');
+
+  if (fileContent.includes(content)) {
+    throw new Error(`Arquivo ${filePath} contém: "${content}"`);
+  }
+}
+
+function getYamlValue(filePath, key) {
+  const fullPath = resolvePath(filePath);
+  const fileContent = fs.readFileSync(fullPath, 'utf-8');
+  const match = fileContent.match(new RegExp(`^\\s*${key}:\\s*([^\\s#]+)`, 'm'));
+  if (!match) {
+    throw new Error(`Arquivo ${filePath} não contém: "${key}:"`);
+  }
+  return match[1].replace(/^['"]|['"]$/g, '');
+}
+
+function getUsesInfo(filePath) {
+  const fullPath = resolvePath(filePath);
+  const fileContent = fs.readFileSync(fullPath, 'utf-8');
+  const match = fileContent.match(/^\s*uses:\s*([^\s@]+)@([^\s]+)\s*$/m);
+  if (!match) {
+    throw new Error(`Arquivo ${filePath} não contém: "uses: ...@..."`);
+  }
+  const usesPath = match[1];
+  const ref = match[2];
+  const parts = usesPath.split('/');
+  if (parts.length < 3) {
+    throw new Error(`Formato inválido em uses: "${usesPath}"`);
+  }
+  const repo = `${parts[0]}/${parts[1]}`;
+  return { repo, ref, usesPath };
+}
+
+function assertCallerConsistency(filePath) {
+  const uses = getUsesInfo(filePath);
+  const workflowRepository = getYamlValue(filePath, 'workflow_repository');
+  const workflowRef = getYamlValue(filePath, 'workflow_ref');
+
+  if (workflowRepository !== uses.repo) {
+    throw new Error(
+      `Arquivo ${filePath} possui workflow_repository "${workflowRepository}" diferente do repo em uses "${uses.repo}".`
+    );
+  }
+
+  if (workflowRef !== uses.ref) {
+    throw new Error(
+      `Arquivo ${filePath} possui workflow_ref "${workflowRef}" diferente do ref em uses "${uses.ref}".`
+    );
+  }
+}
+
 function runNodeScript(scriptPath) {
   try {
     execSync(`node ${scriptPath}`, { stdio: 'pipe', cwd: REPO_ROOT });
@@ -97,14 +156,15 @@ results.push(runTest('Estrutura básica do projeto', () => {
   testFileExists('.github/workflows/changelog-unreleased.yml');
   testFileExists('.github/workflows/changelog-release-reusable.yml');
   testFileExists('.github/workflows/changelog-unreleased-reusable.yml');
-  testFileExists('scripts/generate-changelog.js');
-  testFileExists('scripts/update-unreleased.js');
-  testFileExists('scripts/promote-release.js');
-  testFileExists('scripts/extract-release-notes.js');
-  testFileExists('scripts/lib/changelog.js');
-  testFileExists('scripts/lib/config.js');
-  testFileExists('scripts/changelog-config.json');
-  testFileExists('scripts/package.json');
+  testFileExists(scriptsPath('generate-changelog.js'));
+  testFileExists(scriptsPath('update-unreleased.js'));
+  testFileExists(scriptsPath('promote-release.js'));
+  testFileExists(scriptsPath('extract-release-notes.js'));
+  testFileExists(scriptsPath('lib', 'changelog.js'));
+  testFileExists(scriptsPath('lib', 'config.js'));
+  testFileExists(scriptsPath('changelog-config.json'));
+  testFileExists(scriptsPath('package-lock.json'));
+  testFileExists(scriptsPath('package.json'));
   testFileExists('README.md');
 }));
 
@@ -112,19 +172,33 @@ results.push(runTest('Estrutura básica do projeto', () => {
    TESTE 2 — Workflow GitHub Actions
 ======================================================= */
 results.push(runTest('Workflow GitHub Actions válido', () => {
+  assertCallerConsistency('.github/workflows/changelog-release.yml');
+  assertCallerConsistency('.github/workflows/changelog-unreleased.yml');
+
   testFileContains('.github/workflows/changelog-release.yml', 'release:');
   testFileContains('.github/workflows/changelog-release.yml', 'published');
-  testFileContains('.github/workflows/changelog-release.yml', 'npm run changelog:release');
-  testFileContains('.github/workflows/changelog-release.yml', 'actions/checkout@v4');
-  testFileContains('.github/workflows/changelog-release.yml', 'working-directory: scripts');
-  testFileContains('.github/workflows/changelog-release.yml', 'RELEASE_NOTES.md');
+  testFileContains(
+    '.github/workflows/changelog-release.yml',
+    'uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-release-reusable.yml'
+  );
+  testFileContains('.github/workflows/changelog-release.yml', 'release_branch:');
+  testFileContains('.github/workflows/changelog-release.yml', 'workflow_repository:');
+  testFileContains('.github/workflows/changelog-release.yml', 'workflow_ref:');
+  testFileNotContains('.github/workflows/changelog-release.yml', 'npm run changelog:');
+  testFileNotContains('.github/workflows/changelog-release.yml', 'working-directory: scripts');
   testFileContains('.github/workflows/changelog-unreleased.yml', 'pull_request:');
   testFileContains('.github/workflows/changelog-unreleased.yml', 'types:');
   testFileContains('.github/workflows/changelog-unreleased.yml', 'closed');
-  testFileContains('.github/workflows/changelog-unreleased.yml', 'npm run changelog:unreleased');
-  testFileContains('.github/workflows/changelog-unreleased.yml', 'UNRELEASED_BRANCH');
-  testFileContains('.github/workflows/changelog-unreleased.yml', 'github.event.pull_request.base.ref');
-  testFileContains('.github/workflows/changelog-unreleased.yml', 'working-directory: scripts');
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'branches:');
+  testFileContains(
+    '.github/workflows/changelog-unreleased.yml',
+    'uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-unreleased-reusable.yml'
+  );
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'unreleased_branch:');
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'workflow_repository:');
+  testFileContains('.github/workflows/changelog-unreleased.yml', 'workflow_ref:');
+  testFileNotContains('.github/workflows/changelog-unreleased.yml', 'npm run changelog:');
+  testFileNotContains('.github/workflows/changelog-unreleased.yml', 'working-directory: scripts');
   testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'workflow_call');
   testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'workflow_repository');
   testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'workflow_ref');
@@ -140,25 +214,25 @@ results.push(runTest('Workflow GitHub Actions válido', () => {
    TESTE 3 — package.json
 ======================================================= */
 results.push(runTest('package.json configurado', () => {
-  testFileContains('scripts/package.json', '"scripts"');
-  testFileContains('scripts/package.json', 'changelog');
+  testFileContains(scriptsPath('package.json'), '"scripts"');
+  testFileContains(scriptsPath('package.json'), 'changelog');
 }));
 
 /* =======================================================
    TESTE 4 — Script de geração
 ======================================================= */
 results.push(runTest('Script generate-changelog válido', () => {
-  testFileContains('scripts/generate-changelog.js', 'generateChangelog');
-  testFileContains('scripts/generate-changelog.js', 'getCategoryLabels');
-  testFileContains('scripts/generate-changelog.js', 'getTags');
+  testFileContains(scriptsPath('generate-changelog.js'), 'generateChangelog');
+  testFileContains(scriptsPath('generate-changelog.js'), 'getCategoryLabels');
+  testFileContains(scriptsPath('generate-changelog.js'), 'getTags');
 }));
 
 /* =======================================================
    TESTE 5 — Executar geração
 ======================================================= */
 results.push(runTest('Executar geração de changelog', () => {
-  runNodeScript('scripts/generate-changelog.js');
-  runNodeScript('scripts/update-unreleased.js');
+  runNodeScript(scriptsPath('generate-changelog.js'));
+  runNodeScript(scriptsPath('update-unreleased.js'));
 }));
 
 /* =======================================================

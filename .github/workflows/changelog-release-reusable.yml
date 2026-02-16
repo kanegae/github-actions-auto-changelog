@@ -20,10 +20,6 @@ on:
         required: false
         type: string
         default: "18"
-    secrets:
-      workflow_token:
-        description: Token opcional para checkout do repositório do workflow
-        required: false
 
 permissions:
   contents: write
@@ -48,7 +44,6 @@ jobs:
           repository: ${{ inputs.workflow_repository }}
           ref: ${{ inputs.workflow_ref }}
           path: .changelog-workflow
-          token: ${{ secrets.workflow_token || secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
