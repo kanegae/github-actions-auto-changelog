@@ -30,7 +30,9 @@ function getRepoRoot() {
 }
 
 const REPO_ROOT = getRepoRoot();
-const SCRIPTS_DIR = process.env.CHANGELOG_SCRIPTS_DIR || 'scripts';
+const SCRIPTS_DIR = 'scripts';
+const EXPECTED_WORKFLOW_REPO = 'kanegae/github-actions-auto-changelog';
+const REUSABLE_SCRIPTS_PATH = 'scripts';
 
 function scriptsPath(...parts) {
   return path.join(SCRIPTS_DIR, ...parts);
@@ -130,6 +132,21 @@ function assertCallerConsistency(filePath) {
   }
 }
 
+function assertUsesWorkflow(filePath, workflowFile) {
+  if (EXPECTED_WORKFLOW_REPO) {
+    testFileContains(
+      filePath,
+      `uses: ${EXPECTED_WORKFLOW_REPO}/.github/workflows/${workflowFile}`
+    );
+    return;
+  }
+  testFileContains(filePath, `.github/workflows/${workflowFile}`);
+}
+
+function assertReusableScript(filePath, scriptName) {
+  testFileContains(filePath, `${REUSABLE_SCRIPTS_PATH}/${scriptName}`);
+}
+
 function runNodeScript(scriptPath) {
   try {
     execSync(`node ${scriptPath}`, { stdio: 'pipe', cwd: REPO_ROOT });
@@ -177,36 +194,36 @@ results.push(runTest('Workflow GitHub Actions válido', () => {
 
   testFileContains('.github/workflows/changelog-release.yml', 'release:');
   testFileContains('.github/workflows/changelog-release.yml', 'published');
-  testFileContains(
-    '.github/workflows/changelog-release.yml',
-    'uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-release-reusable.yml'
-  );
+  assertUsesWorkflow('.github/workflows/changelog-release.yml', 'changelog-release-reusable.yml');
   testFileContains('.github/workflows/changelog-release.yml', 'release_branch:');
   testFileContains('.github/workflows/changelog-release.yml', 'workflow_repository:');
   testFileContains('.github/workflows/changelog-release.yml', 'workflow_ref:');
   testFileNotContains('.github/workflows/changelog-release.yml', 'npm run changelog:');
-  testFileNotContains('.github/workflows/changelog-release.yml', 'working-directory: scripts');
+  testFileNotContains(
+    '.github/workflows/changelog-release.yml',
+    `working-directory: ${SCRIPTS_DIR}`
+  );
   testFileContains('.github/workflows/changelog-unreleased.yml', 'pull_request:');
   testFileContains('.github/workflows/changelog-unreleased.yml', 'types:');
   testFileContains('.github/workflows/changelog-unreleased.yml', 'closed');
   testFileContains('.github/workflows/changelog-unreleased.yml', 'branches:');
-  testFileContains(
-    '.github/workflows/changelog-unreleased.yml',
-    'uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-unreleased-reusable.yml'
-  );
+  assertUsesWorkflow('.github/workflows/changelog-unreleased.yml', 'changelog-unreleased-reusable.yml');
   testFileContains('.github/workflows/changelog-unreleased.yml', 'unreleased_branch:');
   testFileContains('.github/workflows/changelog-unreleased.yml', 'workflow_repository:');
   testFileContains('.github/workflows/changelog-unreleased.yml', 'workflow_ref:');
   testFileNotContains('.github/workflows/changelog-unreleased.yml', 'npm run changelog:');
-  testFileNotContains('.github/workflows/changelog-unreleased.yml', 'working-directory: scripts');
+  testFileNotContains(
+    '.github/workflows/changelog-unreleased.yml',
+    `working-directory: ${SCRIPTS_DIR}`
+  );
   testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'workflow_call');
   testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'workflow_repository');
   testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'workflow_ref');
-  testFileContains('.github/workflows/changelog-unreleased-reusable.yml', 'scripts/update-unreleased.js');
+  assertReusableScript('.github/workflows/changelog-unreleased-reusable.yml', 'update-unreleased.js');
   testFileContains('.github/workflows/changelog-release-reusable.yml', 'workflow_call');
   testFileContains('.github/workflows/changelog-release-reusable.yml', 'workflow_repository');
   testFileContains('.github/workflows/changelog-release-reusable.yml', 'workflow_ref');
-  testFileContains('.github/workflows/changelog-release-reusable.yml', 'scripts/promote-release.js');
+  assertReusableScript('.github/workflows/changelog-release-reusable.yml', 'promote-release.js');
   testFileContains('.github/workflows/changelog-release-reusable.yml', 'RELEASE_NOTES.md');
 }));
 
