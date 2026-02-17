@@ -12,8 +12,9 @@ e promovendo para versão em releases na branch definida no workflow de release 
 
 ### Configuração
 
-- `release_branch` em `/.github/workflows/changelog-release.yml`: branch usada para validar releases e receber o commit do changelog (ex.: `master`).
-- `unreleased_branch` e `on.pull_request.branches` em `/.github/workflows/changelog-unreleased.yml`: branch alvo do "Não publicado" e do commit automatizado (ex.: `development`).
+- `env.RELEASE_BRANCH` em `/.github/workflows/changelog-release.yml`: branch usada para validar releases e receber o commit do changelog (ex.: `master`).
+- `env.UNRELEASED_BRANCH` e `on.pull_request.branches` em `/.github/workflows/changelog-unreleased.yml`: branch alvo do "Não publicado" e do commit automatizado (ex.: `development`).
+- `workflow_repository` e `workflow_ref` nos dois workflows: repositório/ref que contém os scripts; mantenha em sync com o `uses` (não aceita variável).
 - `changelog-config.json` (opcional, no repositório consumidor): sobrescreve os padrões do changelog (títulos, labels, chaves de categorias e filtros de tags).
 
 Se existir `changelog-config.json` na raiz do repositório consumidor, ele sobrescreve os padrões.
@@ -143,11 +144,17 @@ on:
 permissions:
   contents: write
 
+env:
+  # Deve refletir a branch do evento acima (branch alvo do PR).
+  UNRELEASED_BRANCH: development
+
 jobs:
   changelog:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
+    # Atenção: manter o repo/ref do uses em sync com workflow_repository/workflow_ref (uses não aceita variável).
     uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-unreleased-reusable.yml@development
     with:
-      unreleased_branch: development
+      unreleased_branch: ${{ env.UNRELEASED_BRANCH }}
       workflow_repository: kanegae/github-actions-auto-changelog
       workflow_ref: development
 ```
@@ -163,11 +170,16 @@ on:
 permissions:
   contents: write
 
+env:
+  # Deve refletir a branch do evento acima (branch alvo da release).
+  RELEASE_BRANCH: master
+
 jobs:
   changelog:
+    # Atenção: manter o repo/ref sincronizados com workflow_repository/workflow_ref (uses não aceita variável).
     uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-release-reusable.yml@development
     with:
-      release_branch: master
+      release_branch: ${{ env.RELEASE_BRANCH }}
       workflow_repository: kanegae/github-actions-auto-changelog
       workflow_ref: development
 ```
@@ -227,6 +239,7 @@ docs: atualizar instruções de instalação
 - Workflows fazem commit/push automático; branch protection pode bloquear a atualização do changelog.
 - `RELEASE_NOTES.md` é gerado durante o workflow para atualizar o body do release e não é versionado.
 - `npm ci` exige `package-lock.json` atualizado para builds reprodutíveis.
+- Em organizações com repositórios privados, pode ser necessário um token dedicado para fazer checkout do `workflow_repository` (melhoria opcional via `workflow_token`).
 
 ## Mais informações
 

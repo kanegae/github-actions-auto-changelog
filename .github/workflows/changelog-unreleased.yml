@@ -1,3 +1,4 @@
+# .github/workflows/changelog-unreleased.yml
 name: Changelog / Update Unreleased
 
 on:
@@ -8,10 +9,16 @@ on:
 permissions:
   contents: write
 
+env:
+  # Deve refletir a branch do evento acima (branch alvo do PR).
+  UNRELEASED_BRANCH: development
+
 jobs:
   changelog:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
+    # Atenção: manter o repo/ref do uses em sync com workflow_repository/workflow_ref (uses não aceita variável).
     uses: kanegae/github-actions-auto-changelog/.github/workflows/changelog-unreleased-reusable.yml@development
     with:
-      unreleased_branch: development
+      unreleased_branch: ${{ env.UNRELEASED_BRANCH }}
       workflow_repository: kanegae/github-actions-auto-changelog
       workflow_ref: development
