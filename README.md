@@ -222,10 +222,10 @@ docs: atualizar instruções de instalação
 │   │   ├── changelog.js                      # Funções compartilhadas
 │   │   └── config.js                         # Leitura e validação de configurações
 │   ├── test-changelog.js                     # Script de testes
-│   ├── package-lock.json                     # Lockfile do npm
 │   └── package.json                          # Configuração Node.js
+│   ├── package-lock.json                     # Lockfile do npm
 ├── CHANGELOG.md                              # Arquivo de changelog (no repositório consumidor)
-└── README.md                                 # README do repositório
+└── README.md                                 # README do repositório / este arquivo
 ```
 
 ## Observações e melhorias futuras
@@ -235,6 +235,7 @@ docs: atualizar instruções de instalação
 - `RELEASE_NOTES.md` é gerado durante o workflow para atualizar o body do release e não é versionado.
 - `npm ci` exige `package-lock.json` atualizado para builds reprodutíveis.
 - Em organizações com repositórios privados, pode ser necessário um token dedicado para fazer checkout do `workflow_repository` (melhoria opcional via `workflow_token`).
+- Revisar a estratégia de concorrência do workflow de "Não publicado" (`changelog-unreleased-reusable.yml`) e confirmar se o uso de `github.ref` é o comportamento desejado.
 
 ## Mais informações
 
