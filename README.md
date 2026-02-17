@@ -19,7 +19,8 @@ e promovendo para versão em releases na branch definida no workflow de release 
 
 Se existir `changelog-config.json` na raiz do repositório consumidor, ele sobrescreve os padrões.
 
-Para filtrar tags por branch, configure `tags.branch` no `changelog-config.json` (padrão: `HEAD`).
+Para filtrar tags por branch, configure `tags.branch` no `changelog-config.json`.
+A precedência é: `CHANGELOG_TAGS_BRANCH` > `RELEASE_BRANCH` > `UNRELEASED_BRANCH` > `tags.branch` > `HEAD`.
 
 Exemplo de sobrescrita:
 
@@ -222,8 +223,8 @@ docs: atualizar instruções de instalação
 │   │   ├── changelog.js                      # Funções compartilhadas
 │   │   └── config.js                         # Leitura e validação de configurações
 │   ├── test-changelog.js                     # Script de testes
-│   └── package.json                          # Configuração Node.js
-│   ├── package-lock.json                     # Lockfile do npm
+│   ├── package.json                          # Configuração Node.js
+│   └── package-lock.json                     # Lockfile do npm
 ├── CHANGELOG.md                              # Arquivo de changelog (no repositório consumidor)
 └── README.md                                 # README do repositório / este arquivo
 ```
